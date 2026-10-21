@@ -1,5 +1,5 @@
 """Lectura de PNG sin modificar las imágenes originales."""
-print("lolo")
+
 from pathlib import Path
 import re
 import warnings
