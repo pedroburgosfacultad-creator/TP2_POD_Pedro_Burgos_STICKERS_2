@@ -111,7 +111,7 @@ nav{display:flex;gap:12px;flex-wrap:wrap}nav a{color:white;border:1px solid #7b9
 main{max-width:1248px;margin:auto;padding:28px 24px 60px}.indicadores{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .indicador,.panel{background:white;border:1px solid #dce1dc;border-radius:14px;padding:20px}
 .indicador strong{display:block;font-size:34px;line-height:1.3}.indicador span{color:var(--muted)}.indicador.aviso{background:#fff5df}
-.contexto{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:20px 0 28px}
+.contexto{display:grid;grid-template-columns:1fr;gap:18px;margin:20px 0 28px}
 h2{font-size:20px;margin:0 0 12px}.panel p{margin:8px 0;color:var(--muted)}
 .barra{display:grid;grid-template-columns:1fr auto;gap:4px;margin:12px 0}.pista{grid-column:1/-1;background:#eef1ee;height:7px;border-radius:5px;overflow:hidden}.pista i{display:block;background:#c48b26;height:100%}
 .filtros{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px;align-items:end}
@@ -134,7 +134,7 @@ footer{margin-top:24px;color:var(--muted);font-size:12px}
 @media(max-width:700px){.galeria,.indicadores{grid-template-columns:repeat(2,minmax(0,1fr))}.contexto{grid-template-columns:1fr}.vista{height:180px}}
 @media(max-width:440px){.galeria,.filtros{grid-template-columns:1fr}main{padding:20px 16px}.indicador{padding:14px}}
 </style></head><body>
-<header><div class="eyebrow">Laboratorio de stickers · TP2</div><h1>Tu colección, bajo la lupa.</h1>
+<header><div class="eyebrow">Laboratorio de stickers · TP2</div><h1>Revisión de Stickers</h1>
 <p>@@CONFIG@@ · El tamaño corresponde al lado mayor del diseño visible.</p>
 <nav aria-label="Informes"><a href="informe.csv" download>Descargar CSV</a><a href="resumen.txt">Leer resumen TXT</a></nav></header>
 <main><section class="indicadores" aria-label="Resultados de esta ejecución">
@@ -144,10 +144,7 @@ footer{margin-top:24px;color:var(--muted);font-size:12px}
 <div class="indicador"><strong>@@ERRORES@@</strong><span>Errores de lectura</span></div></section>
 <section class="contexto"><div class="panel"><h2>¿Qué merece una mirada?</h2>@@BARRAS@@
 <p>Un archivo puede tener varios motivos. Las barras expresan proporciones sobre imágenes leídas.</p></div>
-<div class="panel"><h2>Una revisión asistida, no una aprobación.</h2>
-<p>Las advertencias ayudan a elegir qué mirar primero. No certifican calidad de impresión: la semitransparencia puede ser intencional y una imagen opaca puede ser válida.</p>
-<p>Las miniaturas conservan transparencia sobre un fondo cuadriculado. Son vistas reducidas: revisá el original para evaluar detalles finos.</p>
-<p>Los indicadores describen solo los archivos de esta ejecución, no toda tu colección si elegiste una muestra.</p></div></section>
+</section>
 <h2>Galería de revisión</h2>
 <div class="filtros"><label>Buscar archivo<input id="buscar" type="search" placeholder="Nombre del sticker…"></label>
 <label>Estado<select id="estado"><option value="">Todos los estados</option><option value="REVISAR">Para revisar</option><option value="SIN_ADVERTENCIAS">Sin advertencias</option><option value="ERROR_LECTURA">Error de lectura</option></select></label>
@@ -170,4 +167,3 @@ buscar.addEventListener('input',filtrar);estado.addEventListener('change',filtra
 document.querySelector('#limpiar').addEventListener('click',()=>{buscar.value='';estado.value='';motivo.value='';filtrar();});filtrar();
 </script></body></html>
 """
-

@@ -184,3 +184,25 @@ sus propias imágenes y no dependen de esa muestra.
 Para compartir la galería, copiar toda la carpeta de esa ejecución, incluyendo
 miniaturas, CSV y TXT. Revisar permisos de las imágenes antes de publicarla.
 El módulo src/galeria.py presenta resultados; no cambia las reglas de evaluación.
+
+## Modo guiado para stickers nuevos
+
+Desde C:\tps\tp2_explo, ejecutar:
+
+~~~powershell
+python src/main.py
+~~~
+
+El programa pregunta la carpeta de PNG, el lado mayor de impresión y si se desea
+abrir el HTML al terminar. Se puede pegar la ruta entre comillas y escribir
+decimales con coma o punto. Enter mantiene el tamaño predeterminado de 4 cm;
+en la pregunta de apertura, Enter significa no. Ctrl+C cancela.
+
+Los originales pueden estar en cualquier carpeta accesible. No se suben a Internet.
+No se recorren subcarpetas. Cada ejecución crea informes nuevos dentro de outputs.
+El HTML es un resultado estático: agregar archivos requiere volver a ejecutar.
+
+Los comandos con carpeta y parámetros siguen funcionando sin preguntas.
+En modo guiado también se pueden configurar referencias previamente:
+python src/main.py --ppi 300 --umbral-parcial 20
+Las pruebas de apertura usan simulaciones y no lanzan el navegador real.

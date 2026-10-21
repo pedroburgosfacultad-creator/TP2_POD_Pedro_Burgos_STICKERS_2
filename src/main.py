@@ -4,6 +4,7 @@ import argparse
 import sys
 
 from lectura import analizar_carpeta
+from guiado import configurar_guiado, abrir_informe
 from galeria import crear_galeria
 from evaluacion import evaluar_imagen, resumir_resultados, validar_parametros
 from informes import guardar_informes, texto_resumen
@@ -11,7 +12,8 @@ from informes import guardar_informes, texto_resumen
 
 def main():
     parser = argparse.ArgumentParser(description="Evalúa resolución y transparencia de PNG.")
-    parser.add_argument("carpeta", type=Path, help="Carpeta que contiene los stickers")
+    parser.add_argument("carpeta", nargs="?", type=Path,
+                        help="Carpeta de PNG; si se omite, inicia el modo guiado")
     parser.add_argument("--lado-cm", type=float, default=4,
                         help="Lado mayor del diseño visible en cm (predeterminado: 4)")
     parser.add_argument("--ppi", type=float, default=300,
@@ -24,8 +26,14 @@ def main():
                         default=Path(__file__).resolve().parents[1] / "outputs",
                         help="Carpeta para los informes (predeterminado: outputs en la raíz del proyecto)")
     argumentos = parser.parse_args()
+    abrir_al_terminar = False
     try:
         validar_parametros(argumentos.lado_cm, argumentos.ppi, argumentos.umbral_parcial)
+        if argumentos.carpeta is None:
+            argumentos.carpeta, argumentos.lado_cm, abrir_al_terminar = configurar_guiado(
+                argumentos.lado_cm, argumentos.ppi, argumentos.umbral_parcial,
+                not argumentos.permitir_opacas)
+        print(f"Analizando: {argumentos.carpeta.resolve()}")
         imagenes, errores = analizar_carpeta(argumentos.carpeta)
         resultados = [
             evaluar_imagen(imagen, argumentos.lado_cm, argumentos.ppi,
@@ -38,6 +46,9 @@ def main():
                               argumentos.carpeta)
         destino = guardar_informes(resultados, errores, texto, argumentos.salida)
         galeria, notas = crear_galeria(imagenes, resultados, errores, resumen, texto, destino)
+    except (KeyboardInterrupt, EOFError):
+        print("\nAnálisis cancelado. Si ya había comenzado, pueden quedar salidas parciales.")
+        return 130
     except (OSError, ValueError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 2
@@ -57,6 +68,8 @@ def main():
     print(f"Galería visual: {galeria}")
     for nota in notas:
         print(f"AVISO: {nota}", file=sys.stderr)
+    if abrir_al_terminar:
+        abrir_informe(galeria)
     return 1 if errores else 0
 
 
