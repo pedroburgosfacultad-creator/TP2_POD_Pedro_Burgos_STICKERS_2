@@ -71,7 +71,8 @@ class PruebasLectura(unittest.TestCase):
     def test_comando_documentado(self):
         self.crear_png()
         resultado = subprocess.run(
-            [sys.executable, "src/main.py", str(self.carpeta)],
+            [sys.executable, "src/main.py", str(self.carpeta),
+             "--salida", str(self.carpeta / "salidas")],
             cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True,
         )
         self.assertEqual(resultado.returncode, 0, resultado.stderr)

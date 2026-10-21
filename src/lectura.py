@@ -10,10 +10,28 @@ from PIL import Image, UnidentifiedImageError
 class ImagenSticker:
     """Dimensiones del lienzo de un sticker leído correctamente."""
 
-    def __init__(self, ruta, ancho_px, alto_px):
+    def __init__(self, ruta, ancho_px, alto_px, histograma_alpha, caja_visible):
         self.ruta = Path(ruta)
         self.ancho_px = ancho_px
         self.alto_px = alto_px
+        self.histograma_alpha = histograma_alpha
+        self.caja_visible = caja_visible
+
+    def dimensiones_visibles(self):
+        """Rectángulo que contiene todos los píxeles con alpha mayor que cero."""
+        if self.caja_visible is None:
+            return 0, 0
+        izquierda, arriba, derecha, abajo = self.caja_visible
+        return derecha - izquierda, abajo - arriba
+
+    def porcentajes_alpha(self):
+        """Transparencia total sobre el lienzo y parcial sobre píxeles visibles."""
+        total = self.ancho_px * self.alto_px
+        transparentes = self.histograma_alpha[0]
+        parciales = sum(self.histograma_alpha[1:255])
+        visibles = total - transparentes
+        return (100 * transparentes / total,
+                100 * parciales / visibles if visibles else 0)
 
     def resumen(self):
         return f"OK | {self.ruta.name} | {self.ancho_px} x {self.alto_px} px"
@@ -50,7 +68,13 @@ def leer_png(ruta):
             with Image.open(ruta) as imagen:
                 imagen.load()
                 ancho, alto = imagen.size
-                return ImagenSticker(ruta, ancho, alto)
+                # RGBA también interpreta transparencia de paleta y PNG RGB con tRNS.
+                # Esta conversión ocurre en memoria y nunca se guarda sobre el original.
+                with imagen.convert("RGBA") as rgba:
+                    with rgba.getchannel("A") as alpha:
+                        histograma = alpha.histogram()
+                        caja = alpha.getbbox()
+                return ImagenSticker(ruta, ancho, alto, histograma, caja)
     except UnidentifiedImageError as error:
         raise ValueError("Imagen no reconocida; puede estar dañada o vacía.") from error
     except (Image.DecompressionBombWarning, Image.DecompressionBombError) as error:
