@@ -8,3 +8,4 @@ venv/
 .idea/
 .DS_Store
 outputs/
+data/muestra_visual/

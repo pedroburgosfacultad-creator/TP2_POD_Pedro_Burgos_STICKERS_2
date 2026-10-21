@@ -4,6 +4,7 @@ import argparse
 import sys
 
 from lectura import analizar_carpeta
+from galeria import crear_galeria
 from evaluacion import evaluar_imagen, resumir_resultados, validar_parametros
 from informes import guardar_informes, texto_resumen
 
@@ -36,6 +37,7 @@ def main():
                               argumentos.umbral_parcial, not argumentos.permitir_opacas,
                               argumentos.carpeta)
         destino = guardar_informes(resultados, errores, texto, argumentos.salida)
+        galeria, notas = crear_galeria(imagenes, resultados, errores, resumen, texto, destino)
     except (OSError, ValueError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 2
@@ -52,6 +54,9 @@ def main():
     print("\n" + texto)
     print(f"Informe por archivo: {destino / 'informe.csv'}")
     print(f"Resumen: {destino / 'resumen.txt'}")
+    print(f"Galería visual: {galeria}")
+    for nota in notas:
+        print(f"AVISO: {nota}", file=sys.stderr)
     return 1 if errores else 0
 
 

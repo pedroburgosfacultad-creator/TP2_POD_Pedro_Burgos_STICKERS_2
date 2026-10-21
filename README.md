@@ -155,3 +155,32 @@ entrada sin exigir lectura CSV/JSON. El CSV aquí es un resultado, no una fuente
 Todavía debe resolverse la adaptación del requisito de abstracción de fuentes.
 Quedan pendientes la revisión visual de advertencias, selección de una muestra
 compartible, documentación final de resultados y preparación de la defensa.
+
+## Galería HTML local
+
+Cada ejecución genera también informe.html y miniaturas/ dentro de su carpeta
+de outputs. Abrir informe.html con doble clic en el navegador. No requiere un
+servidor, Internet ni dependencias nuevas. CSV y TXT se conservan.
+
+La galería muestra indicadores, motivos, tarjetas con miniaturas (hasta 240 px),
+búsqueda por nombre y filtros por estado y advertencia. Las cifras generales
+corresponden a la ejecución completa; el contador de tarjetas responde a los filtros.
+Las miniaturas son vistas reducidas, no certifican detalles de impresión.
+Si falla una miniatura, la tarjeta conserva sus mediciones y se informa el problema.
+
+Para probar con la muestra local pequeña, desde la raíz del proyecto:
+
+~~~powershell
+python src/main.py "data/muestra_visual" --lado-cm 4 --ppi 300
+~~~
+
+La muestra contiene casos reales seleccionados por advertencia y dos artificiales
+identificados, uno vacío y otro dañado. El dañado produce código de salida 1
+intencionalmente; los informes igualmente se generan. No extrapolar sus porcentajes
+a la colección completa. Su README registra la selección.
+La muestra y las salidas están ignoradas por Git. Las pruebas automatizadas generan
+sus propias imágenes y no dependen de esa muestra.
+
+Para compartir la galería, copiar toda la carpeta de esa ejecución, incluyendo
+miniaturas, CSV y TXT. Revisar permisos de las imágenes antes de publicarla.
+El módulo src/galeria.py presenta resultados; no cambia las reglas de evaluación.
