@@ -20,7 +20,7 @@ def texto_resumen(resumen, lado_cm, ppi_minimos, umbral_parcial,
     lineas = [
         "ANÁLISIS TÉCNICO DE STICKERS",
         f"Etapa: {etapa}",
-        f"Carpeta de origen: {Path(carpeta).resolve()}",
+        f"Fuente de entrada (carpeta o JSON): {Path(carpeta).resolve()}",
         f"Lado mayor: {lado_cm:g} cm",
         f"Base del cálculo: {'imagen completa' if etapa == 'inicial' else 'rectángulo visible'}",
         f"Referencia de resolución: {ppi_minimos:g} PPI",

@@ -6,6 +6,11 @@ import re
 from datetime import datetime
 import webbrowser
 
+if __package__:
+    from .evaluacion import validar_lado, LADO_MIN_CM, LADO_MAX_CM
+else:
+    from evaluacion import validar_lado, LADO_MIN_CM, LADO_MAX_CM
+
 
 def pedir_carpeta():
     while True:
@@ -34,7 +39,13 @@ def pedir_numero(pregunta, predeterminado, porcentaje=False):
 
 
 def pedir_tamano(predeterminado):
-    return pedir_numero("Lado mayor a imprimir en cm", predeterminado)
+    while True:
+        valor = pedir_numero(f"Lado mayor a imprimir en cm ({LADO_MIN_CM:g} a {LADO_MAX_CM:g})", predeterminado)
+        try:
+            validar_lado(valor)
+            return valor
+        except ValueError as error:
+            print(error)
 
 
 def pedir_si_no(pregunta, predeterminado=False):
@@ -53,10 +64,12 @@ def pedir_apertura():
     return pedir_si_no("¿Abrir el HTML en tu navegador al terminar?")
 
 
-def pedir_etapa(predeterminada="inicial"):
+def pedir_etapa(predeterminada="inicial", permitir_acciones=True):
     print("1. Revisión inicial: imágenes recibidas (JPEG y PNG).")
     print("2. Revisión final: archivos preparados (PNG).")
-    print("3. Preparar carpeta para PhotoRoom desde una selección del HTML.")
+    if permitir_acciones:
+        print("3. Preparar carpeta para PhotoRoom desde una selección del HTML.")
+        print("4. Volver a analizar una selección JSON.")
     while True:
         valor = input(f"Etapa [{'1' if predeterminada == 'inicial' else '2'}]: ").strip().lower()
         if not valor:
@@ -65,9 +78,11 @@ def pedir_etapa(predeterminada="inicial"):
             return "inicial"
         if valor in ("2", "final"):
             return "final"
-        if valor == "3":
+        if permitir_acciones and valor == "4":
+            return "reanalizar"
+        if permitir_acciones and valor == "3":
             return "seleccion"
-        print("Elegí 1, 2 o 3.")
+        print("Elegí 1, 2, 3 o 4." if permitir_acciones else "Elegí 1 o 2.")
 
 
 def configurar_guiado(lado_cm, ppi, umbral_parcial, exigir_transparencia, etapa="inicial"):
@@ -76,7 +91,13 @@ def configurar_guiado(lado_cm, ppi, umbral_parcial, exigir_transparencia, etapa=
     etapa = pedir_etapa(etapa)
     if etapa == "seleccion":
         return {"seleccion": pedir_seleccion()}
-    carpeta = pedir_carpeta()
+    analizar_seleccion = None
+    if etapa == "reanalizar":
+        analizar_seleccion = pedir_seleccion()
+        etapa = pedir_etapa(permitir_acciones=False)
+        carpeta = None
+    else:
+        carpeta = pedir_carpeta()
     print("El tamaño corresponde a la imagen completa, incluidos márgenes y fondos."
           if etapa == "inicial" else
           "El tamaño corresponde al rectángulo visible, sin márgenes transparentes.")
@@ -90,7 +111,7 @@ def configurar_guiado(lado_cm, ppi, umbral_parcial, exigir_transparencia, etapa=
         print("La transparencia no se evalúa en esta etapa.")
         print("PPI alto NO demuestra nitidez. Capturas ampliadas requieren revisión visual.")
     abrir = pedir_apertura()
-    return {"carpeta": carpeta, "lado_cm": lado_cm, "ppi": ppi,
+    return {"carpeta": carpeta, "analizar_seleccion": analizar_seleccion, "lado_cm": lado_cm, "ppi": ppi,
             "umbral_parcial": umbral_parcial, "permitir_opacas": not exigir_transparencia,
             "etapa": etapa, "abrir": abrir}
 

@@ -1,33 +1,17 @@
 """Copia a una carpeta nueva los originales elegidos en el informe HTML."""
 from datetime import datetime
-import json
 from pathlib import Path
 import shutil
+
+if __package__:
+    from .fuentes import leer_seleccion
+else:
+    from fuentes import leer_seleccion
 
 
 def preparar_photoroom(archivo_seleccion, directorio):
     """Devuelve destino, nombres copiados y errores; nunca mueve los originales."""
-    try:
-        contenido = Path(archivo_seleccion).read_bytes()
-        datos = json.loads(contenido.decode("utf-8-sig"))
-    except (UnicodeError, json.JSONDecodeError) as error:
-        raise ValueError("La selección no es un JSON válido descargado del informe.") from error
-    if not isinstance(datos, dict) or datos.get("version") != 1:
-        raise ValueError("Formato de selección no reconocido.")
-    carpeta = datos.get("carpeta")
-    nombres = datos.get("archivos")
-    if not isinstance(carpeta, str) or not Path(carpeta).is_absolute():
-        raise ValueError("La selección debe indicar una carpeta de origen absoluta.")
-    if not isinstance(nombres, list) or not nombres:
-        raise ValueError("La selección no contiene archivos.")
-    for nombre in nombres:
-        if (not isinstance(nombre, str) or not nombre or
-                any(c in nombre for c in '/\\:\x00') or
-                Path(nombre).suffix.lower() not in (".png", ".jpg", ".jpeg")):
-            raise ValueError("La selección contiene un nombre de imagen inválido.")
-    origen = Path(carpeta).resolve()
-    if not origen.is_dir():
-        raise ValueError(f"La carpeta original ya no está disponible: {origen}")
+    origen, nombres, contenido = leer_seleccion(archivo_seleccion)
     destino = Path(directorio).resolve() / datetime.now().strftime("seleccion_photoroom_%Y%m%d_%H%M%S_%f")
     destino.mkdir(parents=True, exist_ok=False)
     # Conserva exactamente la selección recibida, incluso si falta algún original.

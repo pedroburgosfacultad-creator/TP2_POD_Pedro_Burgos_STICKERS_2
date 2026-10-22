@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from PIL import Image
-from src.lectura import leer_png
+from src.lectura import leer_imagen
 from src.evaluacion import evaluar_imagen, resumir_resultados, validar_parametros
 from src.informes import guardar_informes, texto_resumen
 
@@ -22,7 +22,7 @@ class PruebasEvaluacion(unittest.TestCase):
         ruta = self.carpeta / "ejemplo.png"
         with Image.new(modo, medida, color) as imagen:
             imagen.save(ruta)
-        return leer_png(ruta)
+        return leer_imagen(ruta)
 
     def test_resolucion_y_doble_tamano(self):
         imagen = self.crear()
@@ -44,7 +44,7 @@ class PruebasEvaluacion(unittest.TestCase):
         with Image.new("RGBA", (500, 500), (0, 0, 0, 0)) as imagen:
             imagen.paste((255, 0, 0, 255), (100, 150, 400, 350))
             imagen.save(ruta)
-        resultado = evaluar_imagen(leer_png(ruta), 4)
+        resultado = evaluar_imagen(leer_imagen(ruta), 4)
         self.assertEqual(resultado["ancho_visible_px"], 300)
         self.assertEqual(resultado["alto_visible_px"], 200)
         self.assertAlmostEqual(resultado["resolucion_ppi"], 190.5)
@@ -68,7 +68,7 @@ class PruebasEvaluacion(unittest.TestCase):
         with Image.new("RGBA", (10, 10), (0, 0, 0, 0)) as imagen:
             imagen.paste((255, 0, 0, 128), (0, 0, 5, 10))
             imagen.save(ruta)
-        resultado = evaluar_imagen(leer_png(ruta))
+        resultado = evaluar_imagen(leer_imagen(ruta))
         self.assertEqual(resultado["transparentes_pct_lienzo"], 50)
         self.assertEqual(resultado["semitransparentes_pct_visibles"], 100)
         self.assertIn("ALTA_PROPORCION_SEMITRANSPARENTE", resultado["advertencias"])
@@ -79,7 +79,7 @@ class PruebasEvaluacion(unittest.TestCase):
             imagen.putpalette([0, 0, 0, 255, 0, 0] + [0] * 762)
             imagen.putpixel((3, 4), 1)
             imagen.save(ruta, transparency=0)
-        sticker = leer_png(ruta)
+        sticker = leer_imagen(ruta)
         self.assertEqual(sticker.dimensiones_visibles(), (1, 1))
         self.assertEqual(sticker.histograma_alpha[0], 99)
 

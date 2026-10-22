@@ -6,6 +6,12 @@ import warnings
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
+if __package__:
+    from .fuentes import FuenteCarpeta, buscar_archivos
+else:
+    from fuentes import FuenteCarpeta, buscar_archivos
+
+
 
 class ImagenSticker:
     """Dimensiones del lienzo de un sticker leído correctamente."""
@@ -34,46 +40,14 @@ class ImagenSticker:
         return (100 * transparentes / total,
                 100 * parciales / visibles if visibles else 0)
 
-    def resumen(self):
-        return f"OK | {self.ruta.name} | {self.ancho_px} x {self.alto_px} px"
-
-
-def buscar_archivos(carpeta):
-    """Busca archivos del primer nivel y los ordena por nombre."""
-    carpeta = Path(carpeta)
-    if not carpeta.exists():
-        raise FileNotFoundError(f"La carpeta no existe: {carpeta}")
-    if not carpeta.is_dir():
-        raise NotADirectoryError(f"La ruta no corresponde a una carpeta: {carpeta}")
-    archivos = []
-    for ruta in carpeta.iterdir():
-        if ruta.is_file():
-            archivos.append(ruta)
-    return sorted(archivos, key=lambda ruta: (ruta.name.casefold(), ruta.name))
-
-
-def buscar_imagenes(carpeta, solo_png=False):
-    patron = r"\.png\Z" if solo_png else r"\.(png|jpe?g)\Z"
-    return [ruta for ruta in buscar_archivos(carpeta)
-            if re.search(patron, ruta.name, re.IGNORECASE)]
-
-
-def buscar_png(carpeta):
-    return buscar_imagenes(carpeta, solo_png=True)
-
-
-def leer_png(ruta):
-    return leer_imagen(ruta, solo_png=True)
-
-
-def leer_imagen(ruta, solo_png=False):
+def leer_imagen(ruta):
     """Comprueba formato e integridad y obtiene dimensiones en píxeles."""
     ruta = Path(ruta)
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
             with Image.open(ruta) as imagen:
-                esperado = "PNG" if solo_png or ruta.suffix.lower() == ".png" else "JPEG"
+                esperado = "PNG" if ruta.suffix.lower() == ".png" else "JPEG"
                 formato = imagen.format
                 if formato != esperado:
                     raise ValueError(f"El contenido no es {esperado}, aunque tenga esa extensión.")
@@ -101,12 +75,17 @@ def leer_imagen(ruta, solo_png=False):
 
 
 def analizar_carpeta(carpeta, etapa="final"):
+    """Atajo compatible con el análisis original por carpeta."""
+    return analizar_fuente(FuenteCarpeta(carpeta), etapa)
+
+
+def analizar_fuente(fuente, etapa="final"):
     """Separa imágenes válidas y errores sin detener todo el lote."""
     if etapa not in ("inicial", "final"):
         raise ValueError("La etapa debe ser inicial o final.")
     imagenes = []
     errores = []
-    for ruta in buscar_archivos(carpeta):
+    for ruta in fuente.cargar():
         try:
             if not re.search(r"\.(png|jpe?g)\Z", ruta.name, re.IGNORECASE):
                 extension = ruta.suffix or "sin extensión"

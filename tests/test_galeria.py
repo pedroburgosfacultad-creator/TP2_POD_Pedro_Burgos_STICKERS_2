@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from PIL import Image
-from src.lectura import leer_png
+from src.lectura import leer_imagen
 from src.evaluacion import evaluar_imagen, resumir_resultados
 from src.galeria import crear_galeria
 
@@ -15,7 +15,7 @@ class PruebasGaleria(unittest.TestCase):
             with Image.new("RGBA", (800, 400), (255, 0, 0, 128)) as imagen:
                 imagen.save(ruta)
             original = ruta.read_bytes()
-            sticker = leer_png(ruta)
+            sticker = leer_imagen(ruta)
             resultados = [evaluar_imagen(sticker)]
             salida = raiz / "salida"
             salida.mkdir()
@@ -48,7 +48,7 @@ class PruebasGaleria(unittest.TestCase):
             ruta = raiz / "original.png"
             with Image.new("RGBA", (20, 20)) as imagen:
                 imagen.save(ruta)
-            sticker = leer_png(ruta)
+            sticker = leer_imagen(ruta)
             resultados = [evaluar_imagen(sticker)]
             ruta.unlink()
             html, notas = crear_galeria([sticker], resultados, [],

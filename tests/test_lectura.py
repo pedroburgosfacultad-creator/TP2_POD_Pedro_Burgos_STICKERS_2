@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from PIL import Image
-from src.lectura import analizar_carpeta, buscar_png, leer_png
+from src.lectura import analizar_carpeta, buscar_archivos, leer_imagen
 
 
 class PruebasLectura(unittest.TestCase):
@@ -24,7 +24,7 @@ class PruebasLectura(unittest.TestCase):
     def test_dimensiones_y_original_intacto(self):
         ruta = self.crear_png()
         original = ruta.read_bytes()
-        sticker = leer_png(ruta)
+        sticker = leer_imagen(ruta)
         self.assertEqual((sticker.ancho_px, sticker.alto_px), (40, 25))
         self.assertEqual(ruta.read_bytes(), original)
 
@@ -35,7 +35,7 @@ class PruebasLectura(unittest.TestCase):
         imagenes, errores = analizar_carpeta(self.carpeta)
         self.assertEqual(len(imagenes), 1)
         self.assertEqual(len(errores), 2)
-        self.assertEqual(len(buscar_png(self.carpeta)), 2)
+        self.assertEqual(len(buscar_archivos(self.carpeta)), 3)
         self.assertIn("Formato no compatible", errores[1][1])
         self.assertEqual(errores[0][0].name, "danado.png")
 
@@ -44,7 +44,7 @@ class PruebasLectura(unittest.TestCase):
         with Image.new("RGB", (20, 20)) as imagen:
             imagen.save(ruta, format="JPEG")
         with self.assertRaisesRegex(ValueError, "contenido no es PNG"):
-            leer_png(ruta)
+            leer_imagen(ruta)
 
     def test_png_truncado(self):
         ruta = self.crear_png()
@@ -67,7 +67,7 @@ class PruebasLectura(unittest.TestCase):
     def test_no_recorre_subcarpetas(self):
         (self.carpeta / "sub").mkdir()
         self.crear_png("sub/oculto.png")
-        self.assertEqual(buscar_png(self.carpeta), [])
+        self.assertEqual(buscar_archivos(self.carpeta), [])
 
     def test_comando_documentado(self):
         self.crear_png()

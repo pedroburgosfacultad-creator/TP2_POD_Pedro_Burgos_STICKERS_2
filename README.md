@@ -1,300 +1,278 @@
-# Análisis técnico de imágenes para stickers
+# Revisión técnica de imágenes para stickers
 
 Autor: Pedro Burgos. Trabajo Práctico 2 de Programación Orientada a Datos.
 
-## Problema, usuario y pregunta
+## Problema y alcance
 
-El responsable del microemprendimiento necesita identificar archivos que requieren
-revisión antes de componer una impresión. ¿Qué imágenes presentan advertencias
-de resolución o transparencia al tamaño de impresión previsto, y qué problemas
-aparecen con mayor frecuencia?
+El microemprendimiento recibe imágenes que deben revisarse antes de preparar stickers.
+El programa responde: **¿Qué archivos presentan advertencias de resolución o
+transparencia al tamaño previsto, y qué problemas aparecen con más frecuencia?**
 
-La entrada es una carpeta local de PNG/JPEG estáticos en la etapa inicial, o PNG en la final. No se modifica ningún original
-ni se recorren subcarpetas. La salida es un informe CSV por archivo y un resumen
-de las reglas, cantidades y limitaciones.
+Se analizan imágenes locales, se generan mediciones y estadísticas, y se presenta
+una galería para tomar decisiones manuales. No se necesitan registros contables.
+Según la aclaración docente comunicada por el alumno, se permiten imágenes como
+entrada; el CSV es una salida del análisis, no un requisito artificial de entrada.
 
-## Instalación
+Hay dos etapas:
 
-Desde la carpeta `C:\tps\tp2_explo`, en PowerShell, con Python 3.14 (versión probada):
+| Etapa | Archivos admitidos | Base del cálculo | Resultado sin advertencias |
+|---|---|---|---|
+| Inicial: recepción | PNG, JPG, JPEG estáticos | Imagen completa, incluidos fondos y márgenes | CANDIDATO, sujeto a revisión visual |
+| Final: archivos preparados | PNG estáticos | Rectángulo que contiene los píxeles visibles | SIN_ADVERTENCIAS, no aprobación de impresión |
+
+El programa no detecta nitidez, no convierte imágenes ni quita fondos. Convertir
+JPEG a PNG no recupera detalle. Una captura ampliada puede superar la referencia
+PPI y seguir borrosa. La elección para PhotoRoom siempre corresponde al usuario.
+
+## Instalación y ejecución
+
+Proyecto activo: `C:\tps\tp2_explo`.
+Repositorio: https://github.com/pedroburgosfacultad-creator/TP2_POD_Pedro_Burgos_STICKERS_2
+
+Versión probada: Python 3.14. Dependencia: Pillow 12.3.0, fijada en requirements.txt.
+Desde la raíz del proyecto, en PowerShell:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe src/main.py "C:\ruta\a\stickers" --lado-cm 4 --ppi 300
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe src/main.py
 ```
 
-Si el Python activo ya tiene las dependencias:
+Si el Python activo ya tiene Pillow instalado:
 
 ```powershell
-python src/main.py "C:\ruta\a\stickers" --lado-cm 4 --ppi 300
-python -m unittest discover -s tests -v
-```
-
-Pillow lee las imágenes; las demás bibliotecas pertenecen a Python. El análisis
-funciona sin Internet, APIs ni servicios de IA una vez instaladas las dependencias.
-
-## Parámetros
-
-- `carpeta`: ruta opcional; al omitirla se inicia el menú guiado.
-- `--etapa inicial`: recepción de PNG/JPG/JPEG; calcula sobre la imagen completa.
-- `--etapa final`: PNG preparados; calcula sobre el rectángulo visible.
-  Con carpeta explícita, el valor predeterminado sigue siendo final. El menú propone inicial.
-- `--lado-cm`: longitud del lado mayor de la imagen completa (inicial) o del rectángulo visible (final), 4 cm por defecto.
-  Se conserva la proporción; NO significa que ambos lados deban medir 4 cm.
-- `--ppi`: referencia mínima de resolución, 300 PPI por defecto. Es una referencia
-  del proyecto que debe confirmarse con el proveedor, no una certificación.
-- `--umbral-parcial`: porcentaje de píxeles visibles semitransparentes por encima
-  del cual se advierte; 20 por defecto. Es una heurística exploratoria configurable,
-  no un estándar de impresión validado. El valor exacto igual al umbral no advierte.
-- `--permitir-opacas`: desactiva únicamente la advertencia por falta de transparencia.
-- `--salida`: carpeta para resultados. Por defecto es `outputs` dentro de
-  la raíz del proyecto, independientemente de dónde se ejecute el comando.
-
-Ejemplo de comparación de tamaños (cada ejecución conserva sus propios informes):
-
-```powershell
-python src/main.py "C:\ruta\a\stickers" --lado-cm 4
-python src/main.py "C:\ruta\a\stickers" --lado-cm 6
-```
-
-## Dónde ver los resultados
-
-La terminal muestra cada evaluación y al final las rutas completas de los informes.
-Cada ejecución crea una subcarpeta nueva, por ejemplo:
-
-```text
-outputs/analisis_FECHA_HORA/
-    informe.csv
-    informe.html
-    miniaturas/
-```
-
-Abrir `informe.html` en el navegador para ver la colección y su resumen.
-El resumen también se muestra en la terminal; no se genera un archivo TXT separado.
-Abrir o importar `informe.csv` en una planilla para filtrar por `estado` o
-`advertencias`. El CSV usa UTF-8 con BOM, separador punto y coma y punto decimal.
-Si la planilla no reconoce los números, elegir punto como separador decimal al importar.
-Los resultados locales están excluidos de Git: no se suben automáticamente a GitHub.
-
-El CSV incluye todos los archivos encontrados: los ilegibles aparecen como
-`ERROR_LECTURA`, con motivo y mediciones vacías. El resumen incluye parámetros
-y carpeta de origen. No publicar estos reportes sin revisar su contenido.
-
-## Reglas y cálculos
-
-El alpha indica opacidad: 0 es transparente, 255 opaco y 1 a 254 parcialmente
-transparente. La lectura RGBA interpreta también transparencia de PNG de paleta
-y transparencia definida mediante tRNS.
-
-En la etapa final se obtiene la caja rectangular que contiene todos los píxeles con alpha > 0.
-Solo se calcula esa caja: no se recorta ni reescribe el archivo. Si sus medidas son
-ancho_visible y alto_visible:
-
-```text
-lado_visible_px = máximo(ancho_visible, alto_visible)
-resolucion_ppi = lado_visible_px × 2.54 / lado_cm
-ancho_impresion_cm = lado_cm × ancho_visible / lado_visible_px
-alto_impresion_cm = lado_cm × alto_visible / lado_visible_px
-```
-
-PPI significa píxeles por pulgada de la imagen impresa; no es la resolución
-mecánica DPI de una impresora. Se calcula desde píxeles y centímetros, no desde
-una etiqueta DPI guardada en el archivo.
-
-Ejemplo didáctico: un diseño visible de 500 × 500 px mide 317.5 PPI al imprimirlo
-a 4 cm y 158.75 PPI a 8 cm. Aumentar el tamaño físico reduce su resolución efectiva.
-
-| Advertencia | Regla |
-|---|---|
-| SIN_CONTENIDO_VISIBLE | Todos los píxeles son transparentes; no hay resolución calculable |
-| RESOLUCION_INFERIOR_A_REFERENCIA | PPI calculado menor a la referencia, sin redondear para decidir |
-| SIN_TRANSPARENCIA | Todos los píxeles son opacos y no se indicó permitir opacas |
-| ALTA_PROPORCION_SEMITRANSPARENTE | Píxeles con alpha 1..254 / píxeles con alpha > 0 supera el umbral |
-
-`REVISAR` indica al menos una advertencia; `SIN_ADVERTENCIAS` significa que
-no se activaron estas reglas. NO significa aprobación para imprimir.
-Los motivos pueden superponerse: su suma puede superar la cantidad de imágenes.
-
-El porcentaje de transparencia total se calcula sobre el lienzo completo.
-El porcentaje de semitransparencia se calcula sobre los píxeles visibles.
-Para una imagen vacía este último se exporta como 0 por convención, junto con
-SIN_CONTENIDO_VISIBLE y sin resolución. No significa que tenga contenido opaco.
-
-## Validaciones y límites
-
-La expresión regular `\.(png|jpe?g)\Z` selecciona extensiones sin distinguir mayúsculas.
-Pillow verifica el formato real, integridad y decodificación. Rechazamos archivos
-ilegibles, PNG animados e imágenes que superan su protección de tamaño.
-No hay reparación automática ni eliminación de duplicados: cada archivo cuenta.
-
-No se evalúan nitidez, fidelidad del diseño, recorte correcto, color ni requisitos
-del proveedor. Unas dimensiones grandes no garantizan detalle real.
-Los bordes suavizados pueden tener transparencia parcial válida; no se los considera
-defectuosos por existir. El umbral requiere validación visual con ejemplos del negocio.
-Píxeles aislados casi transparentes pueden ampliar la caja visible y sobreestimar
-la resolución útil. Una imagen opaca puede ser un diseño legítimo.
-
-Las mismas imágenes y parámetros producen las mismas mediciones; cambian las
-carpetas de salida por ejecución. El CSV redondea a cuatro decimales solo al exportar.
-El resumen separa errores de lectura de imágenes evaluadas. Sin imágenes leídas,
-el porcentaje para revisar es «no aplica», no 0 %.
-
-Códigos de salida: 0 sin errores de lectura (puede haber advertencias), 1 con archivos
-rechazados, 2 con argumentos/carpetas inválidos o fallo al escribir los informes.
-Una carpeta vacía genera informes vacíos y un aviso explícito. Si solo contiene
-formatos no compatibles, se registran todos como no procesados.
-
-## Organización
-
-- `src/main.py`: argumentos y coordinación.
-- `src/lectura.py`: búsqueda, lectura y clase ImagenSticker con mediciones.
-- `src/evaluacion.py`: parámetros, reglas y resumen.
-- `src/informes.py`: exportación CSV y texto.
-- `tests/`: pruebas ejecutables con imágenes artificiales temporales.
-- `data/README.md`: procedencia, variables y condiciones de uso.
-
-## Estado académico
-
-Según la aclaración docente comunicada por el alumno, se permiten imágenes como
-entrada sin exigir lectura CSV/JSON. El CSV aquí es un resultado, no una fuente.
-Todavía debe resolverse la adaptación del requisito de abstracción de fuentes.
-Quedan pendientes la revisión visual de advertencias, selección de una muestra
-compartible, documentación final de resultados y preparación de la defensa.
-
-## Galería HTML local
-
-Cada ejecución genera también informe.html y miniaturas/ dentro de su carpeta
-de outputs. Abrir informe.html con doble clic en el navegador. No requiere un
-servidor, Internet ni dependencias nuevas. El CSV se conserva como tabla reutilizable.
-
-La galería muestra indicadores, motivos, tarjetas con miniaturas (hasta 240 px),
-búsqueda por nombre y filtros por estado y advertencia. Las cifras generales
-corresponden a la ejecución completa; el contador de tarjetas responde a los filtros.
-Las miniaturas son vistas reducidas, no certifican detalles de impresión.
-Si falla una miniatura, la tarjeta conserva sus mediciones y se informa el problema.
-
-Para probar con la muestra local pequeña, desde la raíz del proyecto:
-
-~~~powershell
-python src/main.py "data/muestra_visual" --lado-cm 4 --ppi 300
-~~~
-
-La muestra contiene casos reales seleccionados por advertencia y dos artificiales
-identificados, uno vacío y otro dañado. El dañado produce código de salida 1
-intencionalmente; los informes igualmente se generan. No extrapolar sus porcentajes
-a la colección completa. Su README registra la selección.
-La muestra y las salidas están ignoradas por Git. Las pruebas automatizadas generan
-sus propias imágenes y no dependen de esa muestra.
-
-Para compartir la galería, copiar toda la carpeta de esa ejecución, incluyendo
-miniaturas y CSV. Revisar permisos de las imágenes antes de publicarla.
-El módulo src/galeria.py presenta resultados; no cambia las reglas de evaluación.
-
-## Modo guiado para stickers nuevos
-
-Desde C:\tps\tp2_explo, ejecutar:
-
-~~~powershell
 python src/main.py
-~~~
-
-El programa pregunta la etapa, carpeta, lado mayor de impresión, referencia PPI
-y si se desea abrir el HTML. En la etapa final también pregunta el umbral de
-semitransparencia y si debe advertir por imágenes opacas. Se puede pegar la ruta entre comillas y escribir
-decimales con coma o punto. Enter mantiene el tamaño predeterminado de 4 cm;
-en la pregunta de apertura, Enter significa no. Ctrl+C cancela.
-
-Los originales pueden estar en cualquier carpeta accesible. No se suben a Internet.
-No se recorren subcarpetas. Cada ejecución crea informes nuevos dentro de outputs.
-El HTML es un resultado estático: agregar archivos requiere volver a ejecutar.
-
-Los comandos con carpeta y parámetros siguen funcionando sin preguntas.
-En modo guiado también se pueden configurar referencias previamente:
-python src/main.py --ppi 300 --umbral-parcial 20
-Las pruebas de apertura usan simulaciones y no lanzan el navegador real.
-
-## Recepción de JPEG y PNG: alcance de la opción B
-
-```powershell
-python src/main.py data/muestra_jpeg_y_png --etapa inicial --lado-cm 4 --ppi 300
 ```
 
-En recepción, CANDIDATO indica suficientes píxeles para el tamaño configurado;
-requiere revisión visual de nitidez y fondo. REVISAR indica resolución inferior
-o ausencia de contenido. No se evalúa transparencia: sus porcentajes quedan
-vacíos, no se presentan como cero. Convertir JPEG a PNG no recupera detalle
-ni elimina el fondo. El programa no convierte, recorta ni clasifica físicamente archivos.
+El menú ofrece revisión inicial, revisión final y preparación para PhotoRoom.
+Las preguntas aceptan rutas entre comillas y decimales con coma o punto. Enter
+mantiene el valor indicado; Ctrl+C cancela. La lectura sigue usando `input()`.
+No hay servidor, APIs, agentes ni servicios pagos. Tras instalar Pillow, el
+análisis y la preparación de carpetas funcionan sin Internet.
 
-El cálculo inicial usa max(ancho_px, alto_px) × 2.54 / lado_cm. Si una captura
-contiene márgenes, interfaz o varios diseños, los PPI pueden sobreestimar el
-detalle útil. Recortar manualmente el diseño y volver a analizar mejora la
-representatividad, pero tampoco detecta desenfoque ni reescalado previo.
-Se respeta la orientación EXIF al leer y crear miniaturas.
+## Parámetros y tamaño físico
 
-En la etapa final, los JPEG se registran como ERROR_LECTURA con indicación
-de usar la inicial; no se omiten silenciosamente ni se consideran dañados por ello.
+El **lado mayor permitido es de 0,1 a 56 cm, inclusive**, con 4 cm por defecto.
+56 cm corresponde a la plantilla máxima indicada por el usuario. El mínimo de
+0,1 cm (1 mm) es un criterio práctico del proyecto para evitar valores absurdamente
+pequeños; no es una norma de impresión. Se conserva la proporción: no se exige
+que ambos lados midan lo indicado. El programa no distribuye diseños en una plantilla.
 
-Validación local del 22/10/2026: muestra aportada de 11 JPEG y 1 PNG,
-a 4 cm y 300 PPI: 10 candidatos, 2 para revisar, 0 errores. Esta muestra
-no permite estimar precisión de detección de mala calidad. Una prueba artificial
-con una imagen nítida y su copia desenfocada de 600 × 600 devuelve 381 PPI
-y CANDIDATO para ambas: documenta una limitación, no un detector de nitidez.
-Las 34 pruebas automatizadas incluyen ambos modos, orientación, menú, errores
-y conservación de originales. No requieren la muestra privada.
-
-## Selección manual para PhotoRoom
-
-1. Generar un nuevo informe y abrir informe.html.
-2. Marcar «Seleccionar para PhotoRoom» en cada imagen elegida. No se selecciona
-   automáticamente ningún candidato. Los errores de lectura no tienen casilla.
-3. Pulsar «Descargar selección». El navegador guarda seleccion_photoroom.json
-   en su carpeta de descargas o en la ubicación elegida. Contiene la ruta de origen
-   y los nombres seleccionados, no las imágenes.
-4. Ejecutar `python src/main.py`, elegir la opción 3 y seleccionar el JSON por número en la lista de Descargas.
-   También se puede pegar una ruta si se guardó en otra carpeta.
-5. El programa crea outputs/seleccion_photoroom_FECHA_HORA y muestra su ubicación.
-   Usar las imágenes de esa carpeta en PhotoRoom manualmente.
-
-También se puede ejecutar:
+| Parámetro | Uso |
+|---|---|
+| `carpeta` | Carpeta de entrada; si se omite, abre el menú |
+| `--etapa inicial` / `--etapa final` | Modo de evaluación; con carpeta explícita se usa final por defecto; el menú propone inicial |
+| `--lado-cm` | Lado mayor entre 0.1 y 56; por comando se usa punto decimal |
+| `--ppi` | Referencia positiva y finita; 300 por defecto |
+| `--umbral-parcial` | Porcentaje de semitransparencia entre 0 y 100; 20 por defecto; aplica a etapa final |
+| `--permitir-opacas` | Desactiva el aviso por ausencia de transparencia en etapa final |
+| `--salida` | Directorio de resultados; por defecto outputs en la raíz del proyecto |
+| `--seleccion` | JSON descargado del HTML para preparar la carpeta de PhotoRoom; no se combina con carpeta de análisis |
 
 ```powershell
+python src/main.py "data/muestra_jpeg_y_png" --etapa inicial --lado-cm 4 --ppi 300
+python src/main.py "C:\ruta\a\png_preparados" --etapa final --lado-cm 6 --umbral-parcial 25
 python src/main.py --seleccion "C:\ruta\seleccion_photoroom.json"
 ```
 
-La copia conserva el contenido original, sin convertir formatos ni eliminar fondos.
-Los no seleccionados no se consideran rechazados. Las selecciones ocultas por filtros
-también se exportan; el contador lo indica. «Limpiar filtros» no borra la selección;
-«Quitar selección» sí. Al recargar/cerrar el HTML se pierde la selección no descargada.
+En el menú, un tamaño fuera del rango provoca una nueva pregunta. Por comando,
+se informa el error sin crear resultados. NaN, infinito y tamaños fuera de rango
+se rechazan también al llamar directamente a la función de evaluación.
 
-Cada preparación crea una carpeta nueva; nunca sobrescribe carpetas anteriores.
-Si un original falta, se informa y se continúa con los demás (salida 1); las copias
-correctas permanecen disponibles. Un archivo modificado se copia en su versión actual:
-si cambiaste imágenes después del análisis, generá un nuevo informe antes de elegir.
-El JSON solo permite nombres PNG/JPG/JPEG dentro de su carpeta de origen.
-No necesita dependencias nuevas, Internet ni acceso automático a PhotoRoom.
-Los informes antiguos no incorporan los controles: es necesario volver a analizar.
+## Lectura y evaluación
 
-La opción 3 busca seleccion_photoroom.json y copias como seleccion_photoroom (1).json
-en Descargas de Windows (también si se reubicó mediante la configuración de Windows).
-Muestra primero los más recientes y su fecha de modificación. Si el navegador usa
-otra carpeta de descarga personalizada, indicar la ruta manualmente.
-No se elige ningún archivo automáticamente: seleccionar su número en la lista.
-La carpeta creada conserva una copia exacta del JSON junto a las imágenes.
-El JSON de Descargas permanece intacto. Repetir la preparación crea otra carpeta.
-El JSON registra lo solicitado, no certifica qué archivos pudieron copiarse:
-consultar los avisos NO COPIADO en la terminal si faltan originales.
+Solo se enumeran archivos del primer nivel; no se recorren subcarpetas. Las
+extensiones se reconocen sin distinguir mayúsculas. Pillow comprueba el formato
+real, verifica y decodifica la imagen. Se respeta la orientación EXIF.
+Los originales nunca se guardan modificados.
 
-## Archivos de formatos no compatibles
+PDF, TXT, WEBP y otros formatos quedan registrados como no procesados, sin abrirlos.
+También se rechazan imágenes dañadas, PNG animados y tamaños que exceden la
+protección de Pillow. Un JPEG en etapa final recibe una explicación para usar la
+etapa inicial. Un rechazo no detiene el análisis de los otros archivos.
 
-Se enumeran todos los archivos del primer nivel de la carpeta. Un PDF, TXT,
-WEBP o archivo sin extensión se registra sin intentar abrirlo: «Formato no compatible».
-La terminal y el CSV indican el motivo. El HTML muestra una tarjeta «No procesado»
-sin casilla para PhotoRoom. Se mantiene el estado técnico ERROR_LECTURA del CSV
-para archivos rechazados; no implica que estén dañados. También incluye JPEG
-en revisión final y errores de decodificación, siempre con explicación específica.
+Para la resolución se usa:
 
-El total incluye estos archivos; los porcentajes de advertencias de calidad se
-siguen calculando solo sobre imágenes leídas. Los archivos no compatibles producen
-código de salida 1, pero no interrumpen el resto del lote ni la generación de informes.
-No se recorren ni contabilizan subcarpetas. Los originales permanecen intactos.
+```text
+lado_evaluado_px = máximo(ancho_evaluado_px, alto_evaluado_px)
+resolucion_ppi = lado_evaluado_px × 2.54 / lado_cm
+ancho_impresion_cm = lado_cm × ancho_evaluado_px / lado_evaluado_px
+alto_impresion_cm = lado_cm × alto_evaluado_px / lado_evaluado_px
+```
+
+PPI significa píxeles por pulgada; no es el DPI mecánico de una impresora ni el
+valor de una etiqueta guardada en la imagen. Un lado de 500 px produce 317,5 PPI
+a 4 cm y 158,75 PPI a 8 cm. La referencia debe acordarse con el proveedor.
+
+El canal alpha vale 0 para transparencia total, 255 para opacidad y 1 a 254 para
+transparencia parcial. El rectángulo visible abarca todos los píxeles con alpha > 0.
+Se interpreta también transparencia de paleta y PNG con tRNS.
+
+| Advertencia | Condición |
+|---|---|
+| SIN_CONTENIDO_VISIBLE | No hay píxeles visibles; resolución y medidas de impresión quedan vacías |
+| RESOLUCION_INFERIOR_A_REFERENCIA | PPI menor que la referencia, antes de redondear |
+| SIN_TRANSPARENCIA | Todos los píxeles son opacos y está activado el aviso; solo final |
+| ALTA_PROPORCION_SEMITRANSPARENTE | El porcentaje parcial supera el umbral; igual al umbral no advierte; solo final |
+
+La transparencia total se divide por todos los píxeles; la parcial, por los visibles.
+En una imagen completamente transparente, el porcentaje parcial final es 0 por
+convención, acompañado de SIN_CONTENIDO_VISIBLE. En inicial, los porcentajes de
+transparencia no se evalúan y quedan vacíos.
+
+Los totales distinguen candidatos/sin advertencias, imágenes para revisar y archivos
+no procesados. Los porcentajes de advertencias usan únicamente imágenes leídas.
+Los motivos pueden superponerse; sin imágenes evaluadas el porcentaje es «no aplica».
+
+## Resultados y galería
+
+Cada ejecución crea una carpeta distinta y muestra su ruta en la terminal:
+
+```text
+outputs/analisis_FECHA_HORA/
+    informe.html
+    informe.csv
+    miniaturas/
+```
+
+Abrir informe.html con doble clic. Incluye miniaturas de hasta 240 px, indicadores,
+filtros por estado/motivo, búsqueda y el resumen con parámetros y limitaciones.
+El HTML recibe los resultados en memoria; no lee el CSV para construirse.
+Las miniaturas no reemplazan la revisión del original a tamaño completo.
+Si una miniatura falla, se conserva la tarjeta y se informa el problema.
+
+El CSV es una tabla por archivo para Excel, LibreOffice o futuros análisis.
+Usa UTF-8 con BOM, punto y coma como separador y punto decimal, con hasta cuatro
+decimales. El diccionario está en [data/README.md](data/README.md).
+No se genera TXT; el resumen se conserva en la terminal y en el HTML.
+El CSV solo no conserva el umbral parcial y la opción de opacidad: mantener el
+HTML de la misma ejecución para conocer todos los parámetros.
+
+Un archivo rechazado tiene estado ERROR_LECTURA en CSV y «No procesado» en HTML,
+con explicación y mediciones vacías. Ese estado no implica necesariamente daño.
+Los archivos no procesados no tienen casilla para PhotoRoom.
+
+Agregar imágenes requiere ejecutar nuevamente el análisis. Para compartir el informe,
+conservar toda la carpeta de ejecución, incluyendo miniaturas y CSV. Las rutas
+locales del HTML/JSON no se adaptan automáticamente a otra computadora.
+
+## Preparar una selección para PhotoRoom
+
+1. Marcar las casillas de las imágenes elegidas en el HTML.
+2. Pulsar «Descargar selección». El navegador guarda seleccion_photoroom.json.
+3. Ejecutar el programa y elegir la opción 3.
+4. Elegir un JSON por número en la lista de Descargas, ordenada desde el más reciente,
+   o pegar su ruta si el navegador lo guardó en otra carpeta.
+5. Usar las imágenes de la carpeta que muestra la terminal en PhotoRoom manualmente.
+
+```text
+outputs/seleccion_photoroom_FECHA_HORA/
+    seleccion_photoroom.json
+    sticker_01.jpg
+    sticker_02.png
+```
+
+Se copian los originales y una copia exacta del JSON. No se mueven ni convierten.
+Descargas conserva su archivo. Cada preparación crea otra carpeta: repetirla ocupa
+espacio adicional. La búsqueda admite los sufijos numerados del navegador y consulta
+la ubicación de Descargas de Windows; una carpeta personalizada del navegador puede
+requerir indicar la ruta manualmente.
+
+Los filtros mantienen la selección, incluso cuando ocultan tarjetas. «Quitar selección»
+la borra; «Limpiar filtros» no. Cerrar o recargar el HTML pierde la selección no descargada.
+No seleccionar no significa rechazar. Seleccionar no significa que ya se procesó.
+
+Si falta un original, se informa NO COPIADO y se continúa con los demás. El JSON
+archivado registra lo solicitado, no acredita que todas las copias se completaron.
+Si un original cambió, se copia su versión actual: generar otro informe tras modificarlo.
+La copia rechaza nombres que salen de la carpeta de origen y enlaces simbólicos.
+
+## Organización y pruebas
+
+| Módulo | Responsabilidad |
+|---|---|
+| src/main.py | Argumentos, coordinación, presentación en terminal y códigos de salida |
+| src/guiado.py | Preguntas, búsqueda de selecciones y apertura del HTML |
+| src/fuentes.py | Contrato FuenteImagenes, fuentes de carpeta/selección y validación compartida del JSON |
+| src/lectura.py | Enumeración, lectura PNG/JPEG y clase ImagenSticker |
+| src/evaluacion.py | Rango físico, reglas, mediciones y estadísticas |
+| src/informes.py | CSV y texto del resumen compartido por terminal y HTML |
+| src/galeria.py | Miniaturas, HTML, filtros y descarga de selección en JavaScript |
+| src/seleccion.py | Validación del JSON y copia para PhotoRoom |
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+El alcance de las pruebas y su interpretación están en [tests/README.md](tests/README.md).
+No necesitan imágenes privadas ni Internet. Códigos de salida: 0 si no hubo rechazos
+(puede haber advertencias), 1 si algún archivo fue rechazado/no copiado, 2 por error
+de parámetros, carpeta, selección o escritura, y 130 por cancelación. Si se interrumpe
+una operación empezada o falla la escritura, pueden quedar salidas parciales.
+
+## Límites, GitHub y entrega
+
+No se certifican nitidez, color, recorte ni facilidad de eliminar fondos. Márgenes,
+varios diseños o píxeles aislados pueden sobreestimar la resolución útil. La
+semitransparencia puede ser intencional; su umbral es una heurística configurable.
+No se eliminan duplicados ni se hace seguimiento de ventas o pedidos.
+
+Las salidas, entornos y muestras privadas están excluidos de Git. No agregar nuevas
+imágenes sin comprobar sus permisos de distribución. El código, requirements.txt,
+documentación y pruebas permiten reproducir el funcionamiento sin esas muestras.
+
+Antes de entregar, contrastar la implementación con la consigna, justificar la adaptación
+del requisito de abstracción de fuentes mediante carpeta y selección JSON, preparar una muestra
+compartible y documentar la revisión visual. Esta documentación describe lo implementado;
+no sustituye la verificación académica, la evidencia de trabajo ni la defensa individual.
+
+Para la defensa, explicar la diferencia entre etapas, PPI y nitidez, alpha, denominadores
+de los porcentajes, errores por archivo y decisión manual. El caso de una imagen borrosa
+con muchos píxeles es una limitación del método, no una garantía de calidad.
+
+
+## Auditoría final y ejemplo comprobado
+
+La [auditoría final](docs/INFORME_FINAL.md) contrasta el código con los siete pasos
+de la consigna y detalla evidencia, limitaciones, proyección y pendientes de entrega.
+
+El 22/10/2026 se verificaron 47 pruebas y el flujo completo con la muestra local
+mixta, que ahora incluye un PDF: 13 archivos en total. A 4 cm y 300 PPI, la etapa
+inicial produjo 10 candidatos, 2 imágenes para revisar y 1 archivo no procesado.
+El 16,67 % corresponde a las 2 imágenes con advertencias entre las 12 leídas;
+no mide calidad real ni representa la colección completa. En final se leyó el PNG
+(con dos advertencias) y se rechazaron los 11 JPEG y el PDF por formato de etapa.
+
+Para entregar, identificar el commit definitivo con `git rev-parse HEAD` después
+de confirmar y publicar los últimos cambios. El enlace solo no identifica la versión.
+El alumno confirmó que el docente solo autorizó cambiar los datos de entrada.
+El requisito de abstracción común de fuentes se implementó con FuenteCarpeta y
+FuenteSeleccionJSON. La adaptación al dominio de imágenes debe explicarse en la defensa.
+También debe acreditarse la referencia de 50 observaciones o justificarse menos,
+y garantizar datos de demostración autorizados y accesibles para la cátedra.
+
+
+## Reanalizar una selección: abstracción de fuentes
+
+La opción **4** del menú permite elegir un JSON de Descargas (o pegar su ruta),
+elegir revisión inicial/final y definir tamaño y parámetros nuevos. Genera otro
+HTML y CSV solo para los originales seleccionados; no copia imágenes a PhotoRoom.
+La opción **3** conserva esa función de copia.
+
+```powershell
+python src/main.py --analizar-seleccion "C:\ruta\seleccion_photoroom.json" --lado-cm 6 --etapa inicial
+```
+
+FuenteImagenes es una clase abstracta: exige cargar(), que devuelve una lista de
+rutas. FuenteCarpeta enumera archivos; FuenteSeleccionJSON lee la lista seleccionada.
+analizar_fuente() usa el mismo contrato sin distinguir el tipo concreto de fuente.
+Después se comparten lectura, evaluación, resumen y reportes. ImagenSticker sigue
+representando cada imagen, no la fuente. No hay reglas PPI duplicadas.
+
+Los nombres repetidos en el JSON se procesan una sola vez; no se eliminan archivos
+distintos que tengan contenido idéntico. Si una imagen falta, se registra el error
+y se continúa. Si el JSON está mal formado o su carpeta original no existe, la
+fuente se rechaza antes de crear informes. El resumen identifica el JSON de entrada.
+El JSON no guarda los parámetros del análisis: se eligen de nuevo.
+Por comando, --analizar-seleccion propone inicial; la carpeta conserva final por defecto.
+No se combinan carpeta, --seleccion y --analizar-seleccion en el mismo comando.

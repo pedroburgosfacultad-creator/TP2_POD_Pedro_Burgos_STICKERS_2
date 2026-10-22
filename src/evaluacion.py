@@ -2,9 +2,17 @@
 import math
 
 
+LADO_MIN_CM = 0.1
+LADO_MAX_CM = 56
+
+
+def validar_lado(lado_cm):
+    if not math.isfinite(lado_cm) or not LADO_MIN_CM <= lado_cm <= LADO_MAX_CM:
+        raise ValueError(f"El lado mayor debe estar entre {LADO_MIN_CM:g} y {LADO_MAX_CM:g} cm, inclusive.")
+
+
 def validar_parametros(lado_cm, ppi_minimos, umbral_parcial):
-    if not math.isfinite(lado_cm) or lado_cm <= 0:
-        raise ValueError("El lado mayor en centímetros debe ser positivo y finito.")
+    validar_lado(lado_cm)
     if not math.isfinite(ppi_minimos) or ppi_minimos <= 0:
         raise ValueError("La referencia PPI debe ser positiva y finita.")
     if not math.isfinite(umbral_parcial) or not 0 <= umbral_parcial <= 100:
