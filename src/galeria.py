@@ -10,7 +10,7 @@ ETIQUETAS = {
     "SIN_CONTENIDO_VISIBLE": "Sin contenido visible",
 }
 ESTADOS = {"REVISAR": "Para revisar", "SIN_ADVERTENCIAS": "Sin advertencias",
-           "ERROR_LECTURA": "Error de lectura", "CANDIDATO": "Candidato · revisar nitidez"}
+           "ERROR_LECTURA": "No procesado", "CANDIDATO": "Candidato · revisar nitidez"}
 
 
 def crear_galeria(imagenes, resultados, errores, resumen, texto, destino, etapa="final"):
@@ -155,7 +155,7 @@ footer{margin-top:24px;color:var(--muted);font-size:12px}
 <div class="indicador"><strong>@@TOTAL@@</strong><span>Archivos encontrados</span></div>
 <div class="indicador aviso"><strong>@@REVISAR@@</strong><span>Para revisar</span></div>
 <div class="indicador"><strong>@@SIN@@</strong><span>@@POSITIVOS@@</span></div>
-<div class="indicador"><strong>@@ERRORES@@</strong><span>Errores de lectura</span></div></section>
+<div class="indicador"><strong>@@ERRORES@@</strong><span>No procesados</span></div></section>
 <section class="contexto"><div class="panel"><h2>¿Qué merece una mirada?</h2>@@BARRAS@@
 <p>Un archivo puede tener varios motivos. Las barras expresan proporciones sobre imágenes leídas.</p></div>
 </section>
@@ -169,7 +169,7 @@ footer{margin-top:24px;color:var(--muted);font-size:12px}
 </section>
 <h2>Galería de revisión</h2>
 <div class="filtros"><label>Buscar archivo<input id="buscar" type="search" placeholder="Nombre del sticker…"></label>
-<label>Estado<select id="estado"><option value="">Todos los estados</option><option value="REVISAR">Para revisar</option><option value="CANDIDATO">Candidatos</option><option value="SIN_ADVERTENCIAS">Sin advertencias</option><option value="ERROR_LECTURA">Error de lectura</option></select></label>
+<label>Estado<select id="estado"><option value="">Todos los estados</option><option value="REVISAR">Para revisar</option><option value="CANDIDATO">Candidatos</option><option value="SIN_ADVERTENCIAS">Sin advertencias</option><option value="ERROR_LECTURA">No procesados</option></select></label>
 <label>Motivo<select id="motivo"><option value="">Todos los motivos</option>@@OPCIONES@@</select></label>
 <button id="limpiar" type="button">Limpiar filtros</button></div>
 <p id="cuenta" class="cuenta" role="status" aria-live="polite">@@TOTAL@@ archivos en esta ejecución · primero los que necesitan revisión.</p>

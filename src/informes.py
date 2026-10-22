@@ -32,9 +32,9 @@ def texto_resumen(resumen, lado_cm, ppi_minimos, umbral_parcial,
         lineas += ["Transparencia y opacidad: no se evalúan en la revisión inicial.",
                    "La imagen completa puede incluir márgenes, interfaz del celular y varios diseños."]
     lineas += [
-        "", f"Archivos PNG/JPG/JPEG encontrados: {resumen['encontrados']}",
+        "", f"Archivos encontrados (sin subcarpetas): {resumen['encontrados']}",
         f"Leídos correctamente: {resumen['leidos']}",
-        f"Con errores de lectura: {resumen['errores']}",
+        f"No procesados (formato no compatible o error de lectura): {resumen['errores']}",
         f"Con advertencias para revisar: {resumen['revisar']}",
     ]
     if etapa == "inicial":
@@ -47,7 +47,7 @@ def texto_resumen(resumen, lado_cm, ppi_minimos, umbral_parcial,
     if not resumen["motivos"]:
         lineas.append("- Ninguno.")
     if resumen["encontrados"] == 0:
-        lineas.append("No se encontraron PNG/JPG/JPEG. No hay colección evaluada.")
+        lineas.append("No se encontraron archivos. No hay colección evaluada.")
     elif resumen["leidos"] == 0:
         lineas.append("No se pudo evaluar ninguna imagen: consultar errores.")
     lineas += ["", "INTERPRETACIÓN Y LÍMITES",

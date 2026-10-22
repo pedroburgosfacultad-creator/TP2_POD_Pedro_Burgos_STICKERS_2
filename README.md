@@ -142,7 +142,8 @@ el porcentaje para revisar es «no aplica», no 0 %.
 
 Códigos de salida: 0 sin errores de lectura (puede haber advertencias), 1 con archivos
 rechazados, 2 con argumentos/carpetas inválidos o fallo al escribir los informes.
-Una carpeta sin PNG/JPG/JPEG genera informes vacíos y un aviso explícito.
+Una carpeta vacía genera informes vacíos y un aviso explícito. Si solo contiene
+formatos no compatibles, se registran todos como no procesados.
 
 ## Organización
 
@@ -283,3 +284,17 @@ La carpeta creada conserva una copia exacta del JSON junto a las imágenes.
 El JSON de Descargas permanece intacto. Repetir la preparación crea otra carpeta.
 El JSON registra lo solicitado, no certifica qué archivos pudieron copiarse:
 consultar los avisos NO COPIADO en la terminal si faltan originales.
+
+## Archivos de formatos no compatibles
+
+Se enumeran todos los archivos del primer nivel de la carpeta. Un PDF, TXT,
+WEBP o archivo sin extensión se registra sin intentar abrirlo: «Formato no compatible».
+La terminal y el CSV indican el motivo. El HTML muestra una tarjeta «No procesado»
+sin casilla para PhotoRoom. Se mantiene el estado técnico ERROR_LECTURA del CSV
+para archivos rechazados; no implica que estén dañados. También incluye JPEG
+en revisión final y errores de decodificación, siempre con explicación específica.
+
+El total incluye estos archivos; los porcentajes de advertencias de calidad se
+siguen calculando solo sobre imágenes leídas. Los archivos no compatibles producen
+código de salida 1, pero no interrumpen el resto del lote ni la generación de informes.
+No se recorren ni contabilizan subcarpetas. Los originales permanecen intactos.

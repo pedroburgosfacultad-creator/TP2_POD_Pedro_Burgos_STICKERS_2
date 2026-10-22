@@ -34,8 +34,9 @@ class PruebasLectura(unittest.TestCase):
         (self.carpeta / "notas.txt").write_text("ignorar", encoding="utf-8")
         imagenes, errores = analizar_carpeta(self.carpeta)
         self.assertEqual(len(imagenes), 1)
-        self.assertEqual(len(errores), 1)
-        self.assertEqual(len(buscar_png(self.carpeta)), len(imagenes) + len(errores))
+        self.assertEqual(len(errores), 2)
+        self.assertEqual(len(buscar_png(self.carpeta)), 2)
+        self.assertIn("Formato no compatible", errores[1][1])
         self.assertEqual(errores[0][0].name, "danado.png")
 
     def test_jpeg_disfrazado_de_png(self):

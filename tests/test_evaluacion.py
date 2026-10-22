@@ -112,7 +112,7 @@ class PruebasEvaluacion(unittest.TestCase):
     def test_sin_imagenes_no_porcentaje_enganoso(self):
         resumen = resumir_resultados([], [])
         self.assertIsNone(resumen["revisar_pct_leidos"])
-        self.assertIn("No se encontraron PNG",
+        self.assertIn("No se encontraron archivos",
                       texto_resumen(resumen, 4, 300, 20, True, self.carpeta))
 
     def test_cli_crea_reportes_y_rechaza_parametros(self):

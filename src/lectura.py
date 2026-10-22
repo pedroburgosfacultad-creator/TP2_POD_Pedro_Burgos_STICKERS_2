@@ -38,7 +38,7 @@ class ImagenSticker:
         return f"OK | {self.ruta.name} | {self.ancho_px} x {self.alto_px} px"
 
 
-def buscar_imagenes(carpeta, solo_png=False):
+def buscar_archivos(carpeta):
     """Busca archivos del primer nivel y los ordena por nombre."""
     carpeta = Path(carpeta)
     if not carpeta.exists():
@@ -47,10 +47,15 @@ def buscar_imagenes(carpeta, solo_png=False):
         raise NotADirectoryError(f"La ruta no corresponde a una carpeta: {carpeta}")
     archivos = []
     for ruta in carpeta.iterdir():
-        # Valida la extensión; el contenido se verifica después con Pillow.
-        if ruta.is_file() and re.search(r"\.png\Z" if solo_png else r"\.(png|jpe?g)\Z", ruta.name, re.IGNORECASE):
+        if ruta.is_file():
             archivos.append(ruta)
     return sorted(archivos, key=lambda ruta: (ruta.name.casefold(), ruta.name))
+
+
+def buscar_imagenes(carpeta, solo_png=False):
+    patron = r"\.png\Z" if solo_png else r"\.(png|jpe?g)\Z"
+    return [ruta for ruta in buscar_archivos(carpeta)
+            if re.search(patron, ruta.name, re.IGNORECASE)]
 
 
 def buscar_png(carpeta):
@@ -101,8 +106,13 @@ def analizar_carpeta(carpeta, etapa="final"):
         raise ValueError("La etapa debe ser inicial o final.")
     imagenes = []
     errores = []
-    for ruta in buscar_imagenes(carpeta):
+    for ruta in buscar_archivos(carpeta):
         try:
+            if not re.search(r"\.(png|jpe?g)\Z", ruta.name, re.IGNORECASE):
+                extension = ruta.suffix or "sin extensión"
+                admitidos = "PNG, JPG y JPEG" if etapa == "inicial" else "PNG"
+                raise ValueError(f"Formato no compatible ({extension}). "
+                                 f"La revisión {etapa} admite {admitidos}. No se abrió el archivo.")
             if etapa == "final" and ruta.suffix.lower() != ".png":
                 raise ValueError("La revisión final requiere PNG. Para JPEG usá la etapa inicial.")
             imagenes.append(leer_imagen(ruta))
