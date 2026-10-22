@@ -3,6 +3,7 @@ from pathlib import Path
 import argparse
 import sys
 
+from seleccion import mostrar_preparacion
 from lectura import analizar_carpeta
 from guiado import configurar_guiado, abrir_informe
 from galeria import crear_galeria
@@ -27,14 +28,21 @@ def main():
                         help="Carpeta para los informes (predeterminado: outputs en la raíz del proyecto)")
     parser.add_argument("--etapa", choices=("inicial", "final"),
                         help="Inicial: recibidos PNG/JPEG; final: PNG preparados")
+    parser.add_argument("--seleccion", type=Path, help="JSON descargado del HTML para copiar originales a PhotoRoom")
     argumentos = parser.parse_args()
+    if argumentos.seleccion is not None and argumentos.carpeta is not None:
+        parser.error("Usá una carpeta para analizar o --seleccion para copiar, no ambos.")
     abrir_al_terminar = False
     try:
+        if argumentos.seleccion is not None:
+            return mostrar_preparacion(argumentos.seleccion, argumentos.salida)
         validar_parametros(argumentos.lado_cm, argumentos.ppi, argumentos.umbral_parcial)
         if argumentos.carpeta is None:
             config = configurar_guiado(
                 argumentos.lado_cm, argumentos.ppi, argumentos.umbral_parcial,
                 not argumentos.permitir_opacas, argumentos.etapa or "inicial")
+            if "seleccion" in config:
+                return mostrar_preparacion(config["seleccion"], argumentos.salida)
             abrir_al_terminar = config.pop("abrir")
             for clave, valor in config.items():
                 setattr(argumentos, clave, valor)

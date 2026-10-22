@@ -241,3 +241,45 @@ con una imagen nítida y su copia desenfocada de 600 × 600 devuelve 381 PPI
 y CANDIDATO para ambas: documenta una limitación, no un detector de nitidez.
 Las 34 pruebas automatizadas incluyen ambos modos, orientación, menú, errores
 y conservación de originales. No requieren la muestra privada.
+
+## Selección manual para PhotoRoom
+
+1. Generar un nuevo informe y abrir informe.html.
+2. Marcar «Seleccionar para PhotoRoom» en cada imagen elegida. No se selecciona
+   automáticamente ningún candidato. Los errores de lectura no tienen casilla.
+3. Pulsar «Descargar selección». El navegador guarda seleccion_photoroom.json
+   en su carpeta de descargas o en la ubicación elegida. Contiene la ruta de origen
+   y los nombres seleccionados, no las imágenes.
+4. Ejecutar `python src/main.py`, elegir la opción 3 y seleccionar el JSON por número en la lista de Descargas.
+   También se puede pegar una ruta si se guardó en otra carpeta.
+5. El programa crea outputs/seleccion_photoroom_FECHA_HORA y muestra su ubicación.
+   Usar las imágenes de esa carpeta en PhotoRoom manualmente.
+
+También se puede ejecutar:
+
+```powershell
+python src/main.py --seleccion "C:\ruta\seleccion_photoroom.json"
+```
+
+La copia conserva el contenido original, sin convertir formatos ni eliminar fondos.
+Los no seleccionados no se consideran rechazados. Las selecciones ocultas por filtros
+también se exportan; el contador lo indica. «Limpiar filtros» no borra la selección;
+«Quitar selección» sí. Al recargar/cerrar el HTML se pierde la selección no descargada.
+
+Cada preparación crea una carpeta nueva; nunca sobrescribe carpetas anteriores.
+Si un original falta, se informa y se continúa con los demás (salida 1); las copias
+correctas permanecen disponibles. Un archivo modificado se copia en su versión actual:
+si cambiaste imágenes después del análisis, generá un nuevo informe antes de elegir.
+El JSON solo permite nombres PNG/JPG/JPEG dentro de su carpeta de origen.
+No necesita dependencias nuevas, Internet ni acceso automático a PhotoRoom.
+Los informes antiguos no incorporan los controles: es necesario volver a analizar.
+
+La opción 3 busca seleccion_photoroom.json y copias como seleccion_photoroom (1).json
+en Descargas de Windows (también si se reubicó mediante la configuración de Windows).
+Muestra primero los más recientes y su fecha de modificación. Si el navegador usa
+otra carpeta de descarga personalizada, indicar la ruta manualmente.
+No se elige ningún archivo automáticamente: seleccionar su número en la lista.
+La carpeta creada conserva una copia exacta del JSON junto a las imágenes.
+El JSON de Descargas permanece intacto. Repetir la preparación crea otra carpeta.
+El JSON registra lo solicitado, no certifica qué archivos pudieron copiarse:
+consultar los avisos NO COPIADO en la terminal si faltan originales.

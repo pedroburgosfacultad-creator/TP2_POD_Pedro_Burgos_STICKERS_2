@@ -1,6 +1,9 @@
 """Preguntas para configurar las dos etapas sin memorizar argumentos."""
 from pathlib import Path
 import math
+import os
+import re
+from datetime import datetime
 import webbrowser
 
 
@@ -53,6 +56,7 @@ def pedir_apertura():
 def pedir_etapa(predeterminada="inicial"):
     print("1. Revisión inicial: imágenes recibidas (JPEG y PNG).")
     print("2. Revisión final: archivos preparados (PNG).")
+    print("3. Preparar carpeta para PhotoRoom desde una selección del HTML.")
     while True:
         valor = input(f"Etapa [{'1' if predeterminada == 'inicial' else '2'}]: ").strip().lower()
         if not valor:
@@ -61,13 +65,17 @@ def pedir_etapa(predeterminada="inicial"):
             return "inicial"
         if valor in ("2", "final"):
             return "final"
-        print("Elegí 1 o 2.")
+        if valor == "3":
+            return "seleccion"
+        print("Elegí 1, 2 o 3.")
 
 
 def configurar_guiado(lado_cm, ppi, umbral_parcial, exigir_transparencia, etapa="inicial"):
     print("\nREVISIÓN DE STICKERS · Modo guiado")
     print("Los originales no se modifican. Podés cancelar con Ctrl+C.")
     etapa = pedir_etapa(etapa)
+    if etapa == "seleccion":
+        return {"seleccion": pedir_seleccion()}
     carpeta = pedir_carpeta()
     print("El tamaño corresponde a la imagen completa, incluidos márgenes y fondos."
           if etapa == "inicial" else
@@ -96,3 +104,62 @@ def abrir_informe(ruta):
         print(f"No se pudo solicitar la apertura del navegador. Abrí este archivo manualmente: {ruta}")
     return abierto
 
+
+
+def carpeta_descargas():
+    """Consulta Descargas de Windows; usa la ubicación habitual como respaldo."""
+    if os.name == "nt":
+        try:
+            import winreg
+            clave = r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, clave) as registro:
+                valor, _ = winreg.QueryValueEx(registro, "{374DE290-123F-4565-9164-39C4925E467B}")
+            return Path(os.path.expandvars(valor))
+        except OSError:
+            pass
+    return Path.home() / "Downloads"
+
+
+def buscar_selecciones(carpeta):
+    """Reconoce el nombre de descarga y sus copias numeradas por el navegador."""
+    encontrados = []
+    for ruta in Path(carpeta).iterdir():
+        if re.fullmatch(r"seleccion_photoroom(?: \(\d+\))?\.json", ruta.name, re.IGNORECASE):
+            try:
+                if ruta.is_file():
+                    encontrados.append((ruta, ruta.stat().st_mtime))
+            except OSError:
+                continue
+    return sorted(encontrados, key=lambda item: (-item[1], item[0].name.casefold()))
+
+
+def pedir_seleccion():
+    carpeta = carpeta_descargas()
+    print(f"Buscando selecciones en: {carpeta}")
+    try:
+        encontrados = buscar_selecciones(carpeta)
+    except OSError:
+        encontrados = []
+        print("No se pudo acceder a Descargas. Podés pegar la ruta del JSON.")
+    for numero, (ruta, fecha) in enumerate(encontrados, start=1):
+        momento = datetime.fromtimestamp(fecha).strftime("%d/%m/%Y %H:%M:%S")
+        print(f"{numero}. {ruta.name} — guardado/modificado {momento}")
+    if not encontrados:
+        print("No se encontraron selecciones descargadas.")
+    print("Elegí un número o pegá la ruta de otro JSON. Ctrl+C cancela.")
+    while True:
+        texto = input("Selección: ").strip()
+        if texto.isdecimal():
+            numero = int(texto)
+            if 1 <= numero <= len(encontrados):
+                ruta = encontrados[numero - 1][0]
+            else:
+                print("Elegí un número de la lista.")
+                continue
+        else:
+            texto = texto.strip('"').strip("'")
+            ruta = Path(texto).expanduser()
+        if texto and ruta.is_file() and ruta.suffix.lower() == ".json":
+            print(f"Selección elegida: {ruta}")
+            return ruta
+        print("Ingresá un número válido o la ruta de un archivo JSON existente.")

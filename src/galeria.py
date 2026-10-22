@@ -60,13 +60,16 @@ def crear_galeria(imagenes, resultados, errores, resumen, texto, destino, etapa=
                 f'<span>{etiqueta}</span></div></div>'
                 f'<p class="alpha">{alpha}</p>'
             )
+        seleccion = (f'<label class="elegir"><input type="checkbox" class="seleccionar" '
+                     f'value="{escape(nombre, quote=True)}"> Seleccionar para PhotoRoom</label>'
+                     if estado != "ERROR_LECTURA" else "")
         tarjetas.append(
             f'<article class="tarjeta" data-nombre="{escape(nombre.casefold(), quote=True)}" '
             f'data-estado="{estado}" data-motivos="{escape(" ".join(motivos), quote=True)}">'
             f'<div class="vista">{vista}</div><div class="contenido">'
             f'<span class="estado {estado}">{ESTADOS[estado]}</span>'
             f'<h3 title="{escape(nombre, quote=True)}">{escape(nombre)}</h3>{detalle}'
-            f'<ul class="motivos">{etiquetas}</ul></div></article>'
+            f'<ul class="motivos">{etiquetas}</ul>{seleccion}</div></article>'
         )
     opciones = "".join(f'<option value="{codigo}">{escape(etiqueta)}</option>'
                        for codigo, etiqueta in ETIQUETAS.items())
@@ -86,6 +89,7 @@ def crear_galeria(imagenes, resultados, errores, resumen, texto, destino, etapa=
     html = PLANTILLA
     cambios = {
         "@@CONFIG@@": escape(config),
+        "@@ORIGEN@@": escape(str(imagenes[0].ruta.resolve().parent) if imagenes else "", quote=True),
         "@@ETAPA@@": "Recepción inicial" if etapa == "inicial" else "Revisión final",
         "@@BASE@@": ("Tamaño aplicado a la imagen completa. Candidato solo indica suficientes píxeles; no verifica nitidez, márgenes ni facilidad de quitar el fondo."
                      if etapa == "inicial" else "El tamaño corresponde al lado mayor del diseño visible."),
@@ -135,6 +139,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{ou
 h3{font-size:14px;line-height:1.4;overflow-wrap:anywhere;margin:12px 0}
 .medidas{display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e5e9e5;padding-top:12px}.medidas strong{display:block;font-size:17px}.medidas span,.alpha{font-size:11px;color:var(--muted)}
 .motivos{font-size:12px;padding-left:17px;color:#744a00}.error-texto{font-size:13px;overflow-wrap:anywhere}
+.elegir{display:flex;align-items:center;gap:8px;margin-top:12px}.elegir input{width:20px;min-height:20px;height:20px}.seleccion-panel{margin:20px 0}.seleccion-panel button{width:auto;margin:4px}button:disabled{opacity:.5;cursor:default}
 .vacio{padding:32px;background:white;border-radius:12px;text-align:center}
 details{margin-top:28px;background:white;border-radius:12px;padding:18px}summary{cursor:pointer;font-weight:600}
 pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.6 system-ui,sans-serif}
@@ -153,6 +158,14 @@ footer{margin-top:24px;color:var(--muted);font-size:12px}
 <div class="indicador"><strong>@@ERRORES@@</strong><span>Errores de lectura</span></div></section>
 <section class="contexto"><div class="panel"><h2>¿Qué merece una mirada?</h2>@@BARRAS@@
 <p>Un archivo puede tener varios motivos. Las barras expresan proporciones sobre imágenes leídas.</p></div>
+</section>
+<section class="panel seleccion-panel" aria-label="Selección para PhotoRoom" data-origen="@@ORIGEN@@" id="seleccion-panel">
+<h2>Preparar para PhotoRoom</h2>
+<p>Marcá las imágenes que querés preparar. Descargá la selección y luego ejecutá el programa: opción 3 del menú.</p>
+<p>Se copiarán los originales. Los archivos no seleccionados permanecen en su carpeta. Los filtros no borran tu selección; al recargar la página se pierde.</p>
+<p id="seleccion-cuenta" role="status" aria-live="polite">0 seleccionados</p>
+<button type="button" id="descargar-seleccion" disabled>Descargar selección</button>
+<button type="button" id="vaciar-seleccion">Quitar selección</button>
 </section>
 <h2>Galería de revisión</h2>
 <div class="filtros"><label>Buscar archivo<input id="buscar" type="search" placeholder="Nombre del sticker…"></label>
@@ -174,5 +187,22 @@ document.querySelector('#cuenta').textContent=visibles+' de '+tarjetas.length+' 
 document.querySelector('#vacio').hidden=visibles!==0;}
 buscar.addEventListener('input',filtrar);estado.addEventListener('change',filtrar);motivo.addEventListener('change',filtrar);
 document.querySelector('#limpiar').addEventListener('click',()=>{buscar.value='';estado.value='';motivo.value='';filtrar();});filtrar();
+const casillas=[...document.querySelectorAll('.seleccionar')];
+const descargar=document.querySelector('#descargar-seleccion');
+function seleccionados(){return casillas.filter(c=>c.checked).map(c=>c.value);}
+function actualizarSeleccion(){const cantidad=seleccionados().length;
+document.querySelector('#seleccion-cuenta').textContent=cantidad+' seleccionados (incluye los ocultos por filtros)';
+descargar.disabled=cantidad===0;}
+casillas.forEach(c=>c.addEventListener('change',actualizarSeleccion));
+document.querySelector('#vaciar-seleccion').addEventListener('click',()=>{casillas.forEach(c=>c.checked=false);actualizarSeleccion();});
+descargar.addEventListener('click',()=>{
+const archivos=seleccionados();if(!archivos.length)return;
+const datos={version:1,carpeta:document.querySelector('#seleccion-panel').dataset.origen,archivos};
+const blob=new Blob([JSON.stringify(datos,null,2)],{type:'application/json;charset=utf-8'});
+const url=URL.createObjectURL(blob),enlace=document.createElement('a');
+enlace.href=url;enlace.download='seleccion_photoroom.json';document.body.appendChild(enlace);enlace.click();enlace.remove();
+setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+actualizarSeleccion();
 </script></body></html>
 """
