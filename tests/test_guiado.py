@@ -40,7 +40,7 @@ class PruebasGuiado(unittest.TestCase):
                 imagen.save(raiz / "ejemplo.png")
             comando = [sys.executable, "src/main.py", "--salida", str(raiz / "salida")]
             proyecto = Path(__file__).resolve().parents[1]
-            resultado = subprocess.run(comando, cwd=proyecto, input=f'"{raiz}"\n4,5\nn\n',
+            resultado = subprocess.run(comando, cwd=proyecto, input=f'1\n"{raiz}"\n4,5\n\nn\n',
                                        text=True, capture_output=True)
             self.assertEqual(resultado.returncode, 0, resultado.stderr)
             informes = list((raiz / "salida").glob("*/informe.html"))

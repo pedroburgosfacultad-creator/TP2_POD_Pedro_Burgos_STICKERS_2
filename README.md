@@ -9,7 +9,7 @@ revisión antes de componer una impresión. ¿Qué imágenes presentan advertenc
 de resolución o transparencia al tamaño de impresión previsto, y qué problemas
 aparecen con mayor frecuencia?
 
-La entrada es una carpeta local de PNG estáticos. No se modifica ningún original
+La entrada es una carpeta local de PNG/JPEG estáticos en la etapa inicial, o PNG en la final. No se modifica ningún original
 ni se recorren subcarpetas. La salida es un informe CSV por archivo y un resumen
 de las reglas, cantidades y limitaciones.
 
@@ -36,8 +36,11 @@ funciona sin Internet, APIs ni servicios de IA una vez instaladas las dependenci
 
 ## Parámetros
 
-- `carpeta`: ruta de entrada obligatoria.
-- `--lado-cm`: longitud del lado mayor del rectángulo visible, 4 cm por defecto.
+- `carpeta`: ruta opcional; al omitirla se inicia el menú guiado.
+- `--etapa inicial`: recepción de PNG/JPG/JPEG; calcula sobre la imagen completa.
+- `--etapa final`: PNG preparados; calcula sobre el rectángulo visible.
+  Con carpeta explícita, el valor predeterminado sigue siendo final. El menú propone inicial.
+- `--lado-cm`: longitud del lado mayor de la imagen completa (inicial) o del rectángulo visible (final), 4 cm por defecto.
   Se conserva la proporción; NO significa que ambos lados deban medir 4 cm.
 - `--ppi`: referencia mínima de resolución, 300 PPI por defecto. Es una referencia
   del proyecto que debe confirmarse con el proveedor, no una certificación.
@@ -64,6 +67,8 @@ Cada ejecución crea una subcarpeta nueva, por ejemplo:
 outputs/analisis_FECHA_HORA/
     informe.csv
     resumen.txt
+    informe.html
+    miniaturas/
 ```
 
 Abrir `resumen.txt` en VS Code para leer la conclusión de la colección.
@@ -82,7 +87,7 @@ El alpha indica opacidad: 0 es transparente, 255 opaco y 1 a 254 parcialmente
 transparente. La lectura RGBA interpreta también transparencia de PNG de paleta
 y transparencia definida mediante tRNS.
 
-Se obtiene la caja rectangular que contiene todos los píxeles con alpha > 0.
+En la etapa final se obtiene la caja rectangular que contiene todos los píxeles con alpha > 0.
 Solo se calcula esa caja: no se recorta ni reescribe el archivo. Si sus medidas son
 ancho_visible y alto_visible:
 
@@ -118,7 +123,7 @@ SIN_CONTENIDO_VISIBLE y sin resolución. No significa que tenga contenido opaco.
 
 ## Validaciones y límites
 
-La expresión regular `\.png\Z` selecciona extensiones sin distinguir mayúsculas.
+La expresión regular `\.(png|jpe?g)\Z` selecciona extensiones sin distinguir mayúsculas.
 Pillow verifica el formato real, integridad y decodificación. Rechazamos archivos
 ilegibles, PNG animados e imágenes que superan su protección de tamaño.
 No hay reparación automática ni eliminación de duplicados: cada archivo cuenta.
@@ -137,7 +142,7 @@ el porcentaje para revisar es «no aplica», no 0 %.
 
 Códigos de salida: 0 sin errores de lectura (puede haber advertencias), 1 con archivos
 rechazados, 2 con argumentos/carpetas inválidos o fallo al escribir los informes.
-Una carpeta sin PNG genera informes vacíos y un aviso explícito.
+Una carpeta sin PNG/JPG/JPEG genera informes vacíos y un aviso explícito.
 
 ## Organización
 
@@ -193,8 +198,9 @@ Desde C:\tps\tp2_explo, ejecutar:
 python src/main.py
 ~~~
 
-El programa pregunta la carpeta de PNG, el lado mayor de impresión y si se desea
-abrir el HTML al terminar. Se puede pegar la ruta entre comillas y escribir
+El programa pregunta la etapa, carpeta, lado mayor de impresión, referencia PPI
+y si se desea abrir el HTML. En la etapa final también pregunta el umbral de
+semitransparencia y si debe advertir por imágenes opacas. Se puede pegar la ruta entre comillas y escribir
 decimales con coma o punto. Enter mantiene el tamaño predeterminado de 4 cm;
 en la pregunta de apertura, Enter significa no. Ctrl+C cancela.
 
@@ -206,3 +212,32 @@ Los comandos con carpeta y parámetros siguen funcionando sin preguntas.
 En modo guiado también se pueden configurar referencias previamente:
 python src/main.py --ppi 300 --umbral-parcial 20
 Las pruebas de apertura usan simulaciones y no lanzan el navegador real.
+
+## Recepción de JPEG y PNG: alcance de la opción B
+
+```powershell
+python src/main.py data/muestra_jpeg_y_png --etapa inicial --lado-cm 4 --ppi 300
+```
+
+En recepción, CANDIDATO indica suficientes píxeles para el tamaño configurado;
+requiere revisión visual de nitidez y fondo. REVISAR indica resolución inferior
+o ausencia de contenido. No se evalúa transparencia: sus porcentajes quedan
+vacíos, no se presentan como cero. Convertir JPEG a PNG no recupera detalle
+ni elimina el fondo. El programa no convierte, recorta ni clasifica físicamente archivos.
+
+El cálculo inicial usa max(ancho_px, alto_px) × 2.54 / lado_cm. Si una captura
+contiene márgenes, interfaz o varios diseños, los PPI pueden sobreestimar el
+detalle útil. Recortar manualmente el diseño y volver a analizar mejora la
+representatividad, pero tampoco detecta desenfoque ni reescalado previo.
+Se respeta la orientación EXIF al leer y crear miniaturas.
+
+En la etapa final, los JPEG se registran como ERROR_LECTURA con indicación
+de usar la inicial; no se omiten silenciosamente ni se consideran dañados por ello.
+
+Validación local del 22/10/2026: muestra aportada de 11 JPEG y 1 PNG,
+a 4 cm y 300 PPI: 10 candidatos, 2 para revisar, 0 errores. Esta muestra
+no permite estimar precisión de detección de mala calidad. Una prueba artificial
+con una imagen nítida y su copia desenfocada de 600 × 600 devuelve 381 PPI
+y CANDIDATO para ambas: documenta una limitación, no un detector de nitidez.
+Las 34 pruebas automatizadas incluyen ambos modos, orientación, menú, errores
+y conservación de originales. No requieren la muestra privada.

@@ -1,16 +1,17 @@
-"""Lectura de PNG sin modificar las imágenes originales."""
+"""Lectura de PNG y JPEG sin modificar las imágenes originales."""
 
 from pathlib import Path
 import re
 import warnings
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 
 class ImagenSticker:
     """Dimensiones del lienzo de un sticker leído correctamente."""
 
-    def __init__(self, ruta, ancho_px, alto_px, histograma_alpha, caja_visible):
+    def __init__(self, ruta, ancho_px, alto_px, histograma_alpha, caja_visible, formato="PNG"):
+        self.formato = formato
         self.ruta = Path(ruta)
         self.ancho_px = ancho_px
         self.alto_px = alto_px
@@ -37,7 +38,7 @@ class ImagenSticker:
         return f"OK | {self.ruta.name} | {self.ancho_px} x {self.alto_px} px"
 
 
-def buscar_png(carpeta):
+def buscar_imagenes(carpeta, solo_png=False):
     """Busca archivos del primer nivel y los ordena por nombre."""
     carpeta = Path(carpeta)
     if not carpeta.exists():
@@ -47,26 +48,37 @@ def buscar_png(carpeta):
     archivos = []
     for ruta in carpeta.iterdir():
         # Valida la extensión; el contenido se verifica después con Pillow.
-        if ruta.is_file() and re.search(r"\.png\Z", ruta.name, re.IGNORECASE):
+        if ruta.is_file() and re.search(r"\.png\Z" if solo_png else r"\.(png|jpe?g)\Z", ruta.name, re.IGNORECASE):
             archivos.append(ruta)
     return sorted(archivos, key=lambda ruta: (ruta.name.casefold(), ruta.name))
 
 
+def buscar_png(carpeta):
+    return buscar_imagenes(carpeta, solo_png=True)
+
+
 def leer_png(ruta):
+    return leer_imagen(ruta, solo_png=True)
+
+
+def leer_imagen(ruta, solo_png=False):
     """Comprueba formato e integridad y obtiene dimensiones en píxeles."""
     ruta = Path(ruta)
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
             with Image.open(ruta) as imagen:
-                if imagen.format != "PNG":
-                    raise ValueError("El contenido no es PNG, aunque tenga esa extensión.")
+                esperado = "PNG" if solo_png or ruta.suffix.lower() == ".png" else "JPEG"
+                formato = imagen.format
+                if formato != esperado:
+                    raise ValueError(f"El contenido no es {esperado}, aunque tenga esa extensión.")
                 if getattr(imagen, "n_frames", 1) > 1:
                     raise ValueError("Los PNG animados no se admiten en esta versión.")
                 imagen.verify()
             # verify() requiere reabrir para decodificar los píxeles.
             with Image.open(ruta) as imagen:
                 imagen.load()
+                imagen = ImageOps.exif_transpose(imagen)
                 ancho, alto = imagen.size
                 # RGBA también interpreta transparencia de paleta y PNG RGB con tRNS.
                 # Esta conversión ocurre en memoria y nunca se guarda sobre el original.
@@ -74,7 +86,7 @@ def leer_png(ruta):
                     with rgba.getchannel("A") as alpha:
                         histograma = alpha.histogram()
                         caja = alpha.getbbox()
-                return ImagenSticker(ruta, ancho, alto, histograma, caja)
+                return ImagenSticker(ruta, ancho, alto, histograma, caja, formato)
     except UnidentifiedImageError as error:
         raise ValueError("Imagen no reconocida; puede estar dañada o vacía.") from error
     except (Image.DecompressionBombWarning, Image.DecompressionBombError) as error:
@@ -83,13 +95,17 @@ def leer_png(ruta):
         raise ValueError(f"No se pudo leer el archivo: {error}") from error
 
 
-def analizar_carpeta(carpeta):
+def analizar_carpeta(carpeta, etapa="final"):
     """Separa imágenes válidas y errores sin detener todo el lote."""
+    if etapa not in ("inicial", "final"):
+        raise ValueError("La etapa debe ser inicial o final.")
     imagenes = []
     errores = []
-    for ruta in buscar_png(carpeta):
+    for ruta in buscar_imagenes(carpeta):
         try:
-            imagenes.append(leer_png(ruta))
+            if etapa == "final" and ruta.suffix.lower() != ".png":
+                raise ValueError("La revisión final requiere PNG. Para JPEG usá la etapa inicial.")
+            imagenes.append(leer_imagen(ruta))
         except ValueError as error:
             errores.append((ruta, str(error)))
     return imagenes, errores

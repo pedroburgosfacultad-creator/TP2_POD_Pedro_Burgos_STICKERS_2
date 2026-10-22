@@ -1,7 +1,7 @@
 """Galería HTML local: miniaturas pequeñas y filtros sin Internet."""
 from html import escape
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageOps
 
 ETIQUETAS = {
     "RESOLUCION_INFERIOR_A_REFERENCIA": "Resolución baja",
@@ -10,10 +10,10 @@ ETIQUETAS = {
     "SIN_CONTENIDO_VISIBLE": "Sin contenido visible",
 }
 ESTADOS = {"REVISAR": "Para revisar", "SIN_ADVERTENCIAS": "Sin advertencias",
-           "ERROR_LECTURA": "Error de lectura"}
+           "ERROR_LECTURA": "Error de lectura", "CANDIDATO": "Candidato · revisar nitidez"}
 
 
-def crear_galeria(imagenes, resultados, errores, resumen, texto, destino):
+def crear_galeria(imagenes, resultados, errores, resumen, texto, destino, etapa="final"):
     """Crea HTML y miniaturas de hasta 240 px. No guarda cambios en los originales."""
     destino = Path(destino)
     miniaturas = destino / "miniaturas"
@@ -25,7 +25,7 @@ def crear_galeria(imagenes, resultados, errores, resumen, texto, destino):
         {"archivo": ruta.name, "estado": "ERROR_LECTURA", "advertencias": [], "error": motivo}
         for ruta, motivo in errores
     ]
-    orden = {"REVISAR": 0, "ERROR_LECTURA": 1, "SIN_ADVERTENCIAS": 2}
+    orden = {"REVISAR": 0, "ERROR_LECTURA": 1, "SIN_ADVERTENCIAS": 2, "CANDIDATO": 2}
     filas.sort(key=lambda fila: (orden[fila["estado"]], fila["archivo"].casefold()))
     for numero, fila in enumerate(filas):
         nombre = fila["archivo"]
@@ -35,7 +35,7 @@ def crear_galeria(imagenes, resultados, errores, resumen, texto, destino):
         if estado != "ERROR_LECTURA":
             try:
                 with Image.open(rutas[nombre]) as original:
-                    with original.convert("RGBA") as miniatura:
+                    with ImageOps.exif_transpose(original).convert("RGBA") as miniatura:
                         miniatura.thumbnail((240, 240), Image.Resampling.LANCZOS)
                         archivo_miniatura = f"{numero:04d}.png"
                         miniatura.save(miniaturas / archivo_miniatura)
@@ -49,11 +49,16 @@ def crear_galeria(imagenes, resultados, errores, resumen, texto, destino):
         else:
             ppi = fila["resolucion_ppi"]
             resolucion = f"{ppi:.1f}" if ppi is not None else "—"
+            inicial = etapa == "inicial"
+            dimensiones = (f'{fila["ancho_evaluado_px"]} × {fila["alto_evaluado_px"]}')
+            etiqueta = "píxeles de la imagen completa" if inicial else "píxeles visibles"
+            alpha = ("Nitidez no evaluada · transparencia no evaluada" if inicial else
+                     f'Semitransparentes: {fila["semitransparentes_pct_visibles"]:.1f}% de los visibles')
             detalle = (
                 f'<div class="medidas"><div><strong>{resolucion}</strong><span>PPI efectivos</span></div>'
-                f'<div><strong>{fila["ancho_visible_px"]} × {fila["alto_visible_px"]}</strong>'
-                '<span>píxeles visibles</span></div></div>'
-                f'<p class="alpha">Semitransparentes: {fila["semitransparentes_pct_visibles"]:.1f}% de los visibles</p>'
+                f'<div><strong>{dimensiones}</strong>'
+                f'<span>{etiqueta}</span></div></div>'
+                f'<p class="alpha">{alpha}</p>'
             )
         tarjetas.append(
             f'<article class="tarjeta" data-nombre="{escape(nombre.casefold(), quote=True)}" '
@@ -81,9 +86,13 @@ def crear_galeria(imagenes, resultados, errores, resumen, texto, destino):
     html = PLANTILLA
     cambios = {
         "@@CONFIG@@": escape(config),
+        "@@ETAPA@@": "Recepción inicial" if etapa == "inicial" else "Revisión final",
+        "@@BASE@@": ("Tamaño aplicado a la imagen completa. Candidato solo indica suficientes píxeles; no verifica nitidez, márgenes ni facilidad de quitar el fondo."
+                     if etapa == "inicial" else "El tamaño corresponde al lado mayor del diseño visible."),
+        "@@POSITIVOS@@": "Candidatos" if etapa == "inicial" else "Sin advertencias",
         "@@TOTAL@@": str(resumen["encontrados"]),
         "@@REVISAR@@": str(resumen["revisar"]),
-        "@@SIN@@": str(resumen["sin_advertencias"]),
+        "@@SIN@@": str(resumen["candidatos"] if etapa == "inicial" else resumen["sin_advertencias"]),
         "@@ERRORES@@": str(resumen["errores"]),
         "@@BARRAS@@": barras, "@@OPCIONES@@": opciones,
         "@@TARJETAS@@": "\n".join(tarjetas),
@@ -122,7 +131,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{ou
 .vista{height:210px;display:flex;align-items:center;justify-content:center;padding:16px;background-color:#fff;background-image:conic-gradient(#e5e9e5 25%,transparent 0 50%,#e5e9e5 0 75%,transparent 0);background-size:20px 20px}
 .vista img{max-width:100%;max-height:100%;object-fit:contain}.sin-vista{background:#fff;padding:8px 12px;border-radius:8px;color:#53656e}
 .contenido{padding:16px}.estado{font-size:11px;font-weight:700;padding:4px 8px;border-radius:5px;display:inline-block}
-.REVISAR{background:#fff0c7;color:#744a00}.SIN_ADVERTENCIAS{background:#dff2e9;color:#185b43}.ERROR_LECTURA{background:#fce1dc;color:#942e21}
+.REVISAR{background:#fff0c7;color:#744a00}.SIN_ADVERTENCIAS,.CANDIDATO{background:#dff2e9;color:#185b43}.ERROR_LECTURA{background:#fce1dc;color:#942e21}
 h3{font-size:14px;line-height:1.4;overflow-wrap:anywhere;margin:12px 0}
 .medidas{display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e5e9e5;padding-top:12px}.medidas strong{display:block;font-size:17px}.medidas span,.alpha{font-size:11px;color:var(--muted)}
 .motivos{font-size:12px;padding-left:17px;color:#744a00}.error-texto{font-size:13px;overflow-wrap:anywhere}
@@ -135,19 +144,19 @@ footer{margin-top:24px;color:var(--muted);font-size:12px}
 @media(max-width:440px){.galeria,.filtros{grid-template-columns:1fr}main{padding:20px 16px}.indicador{padding:14px}}
 </style></head><body>
 <header><div class="eyebrow">Laboratorio de stickers · TP2</div><h1>Revisión de Stickers</h1>
-<p>@@CONFIG@@ · El tamaño corresponde al lado mayor del diseño visible.</p>
+<p>@@ETAPA@@ · @@CONFIG@@ · @@BASE@@</p>
 <nav aria-label="Informes"><a href="informe.csv" download>Descargar CSV</a><a href="resumen.txt">Leer resumen TXT</a></nav></header>
 <main><section class="indicadores" aria-label="Resultados de esta ejecución">
 <div class="indicador"><strong>@@TOTAL@@</strong><span>Archivos encontrados</span></div>
 <div class="indicador aviso"><strong>@@REVISAR@@</strong><span>Para revisar</span></div>
-<div class="indicador"><strong>@@SIN@@</strong><span>Sin advertencias</span></div>
+<div class="indicador"><strong>@@SIN@@</strong><span>@@POSITIVOS@@</span></div>
 <div class="indicador"><strong>@@ERRORES@@</strong><span>Errores de lectura</span></div></section>
 <section class="contexto"><div class="panel"><h2>¿Qué merece una mirada?</h2>@@BARRAS@@
 <p>Un archivo puede tener varios motivos. Las barras expresan proporciones sobre imágenes leídas.</p></div>
 </section>
 <h2>Galería de revisión</h2>
 <div class="filtros"><label>Buscar archivo<input id="buscar" type="search" placeholder="Nombre del sticker…"></label>
-<label>Estado<select id="estado"><option value="">Todos los estados</option><option value="REVISAR">Para revisar</option><option value="SIN_ADVERTENCIAS">Sin advertencias</option><option value="ERROR_LECTURA">Error de lectura</option></select></label>
+<label>Estado<select id="estado"><option value="">Todos los estados</option><option value="REVISAR">Para revisar</option><option value="CANDIDATO">Candidatos</option><option value="SIN_ADVERTENCIAS">Sin advertencias</option><option value="ERROR_LECTURA">Error de lectura</option></select></label>
 <label>Motivo<select id="motivo"><option value="">Todos los motivos</option>@@OPCIONES@@</select></label>
 <button id="limpiar" type="button">Limpiar filtros</button></div>
 <p id="cuenta" class="cuenta" role="status" aria-live="polite">@@TOTAL@@ archivos en esta ejecución · primero los que necesitan revisión.</p>

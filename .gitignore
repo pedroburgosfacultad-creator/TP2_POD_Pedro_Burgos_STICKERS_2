@@ -9,3 +9,6 @@ venv/
 .DS_Store
 outputs/
 data/muestra_visual/
+
+# Muestra local de recepción
+data/muestra_jpeg_y_png/
