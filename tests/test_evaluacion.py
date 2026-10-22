@@ -98,16 +98,15 @@ class PruebasEvaluacion(unittest.TestCase):
         self.assertEqual(resumen["encontrados"], 2)
         self.assertEqual(resumen["leidos"],
                          resumen["revisar"] + resumen["sin_advertencias"])
-        texto = texto_resumen(resumen, 4, 300, 20, True, self.carpeta)
-        salida = guardar_informes(resultados, errores, texto, self.carpeta / "salidas")
+        salida = guardar_informes(resultados, errores, self.carpeta / "salidas")
         with (salida / "informe.csv").open(encoding="utf-8-sig", newline="") as archivo:
             filas = list(csv.DictReader(archivo, delimiter=";"))
         self.assertEqual(len(filas), 2)
         self.assertEqual(filas[0]["estado"], "REVISAR")
         self.assertEqual(filas[1]["estado"], "ERROR_LECTURA")
         self.assertEqual(filas[1]["resolucion_ppi"], "")
-        self.assertEqual((salida / "resumen.txt").read_text(encoding="utf-8"), texto)
-        otra = guardar_informes(resultados, errores, texto, self.carpeta / "salidas")
+        self.assertFalse((salida / "resumen.txt").exists())
+        otra = guardar_informes(resultados, errores, self.carpeta / "salidas")
         self.assertNotEqual(salida, otra)
 
     def test_sin_imagenes_no_porcentaje_enganoso(self):

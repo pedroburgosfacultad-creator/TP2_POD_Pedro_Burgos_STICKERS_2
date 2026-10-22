@@ -145,7 +145,7 @@ footer{margin-top:24px;color:var(--muted);font-size:12px}
 </style></head><body>
 <header><div class="eyebrow">Laboratorio de stickers · TP2</div><h1>Revisión de Stickers</h1>
 <p>@@ETAPA@@ · @@CONFIG@@ · @@BASE@@</p>
-<nav aria-label="Informes"><a href="informe.csv" download>Descargar CSV</a><a href="resumen.txt">Leer resumen TXT</a></nav></header>
+<nav aria-label="Informes"><a href="informe.csv" download>Descargar CSV</a></nav></header>
 <main><section class="indicadores" aria-label="Resultados de esta ejecución">
 <div class="indicador"><strong>@@TOTAL@@</strong><span>Archivos encontrados</span></div>
 <div class="indicador aviso"><strong>@@REVISAR@@</strong><span>Para revisar</span></div>

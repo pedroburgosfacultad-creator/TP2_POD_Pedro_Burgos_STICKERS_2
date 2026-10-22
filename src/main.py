@@ -51,7 +51,7 @@ def main():
         texto = texto_resumen(resumen, argumentos.lado_cm, argumentos.ppi,
                               argumentos.umbral_parcial, not argumentos.permitir_opacas,
                               argumentos.carpeta, argumentos.etapa)
-        destino = guardar_informes(resultados, errores, texto, argumentos.salida)
+        destino = guardar_informes(resultados, errores, argumentos.salida)
         galeria, notas = crear_galeria(imagenes, resultados, errores, resumen, texto, destino, argumentos.etapa)
     except (KeyboardInterrupt, EOFError):
         print("\nAnálisis cancelado. Si ya había comenzado, pueden quedar salidas parciales.")
@@ -71,7 +71,6 @@ def main():
 
     print("\n" + texto)
     print(f"Informe por archivo: {destino / 'informe.csv'}")
-    print(f"Resumen: {destino / 'resumen.txt'}")
     print(f"Galería visual: {galeria}")
     for nota in notas:
         print(f"AVISO: {nota}", file=sys.stderr)

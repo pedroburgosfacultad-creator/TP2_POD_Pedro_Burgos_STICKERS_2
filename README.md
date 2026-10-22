@@ -66,12 +66,12 @@ Cada ejecución crea una subcarpeta nueva, por ejemplo:
 ```text
 outputs/analisis_FECHA_HORA/
     informe.csv
-    resumen.txt
     informe.html
     miniaturas/
 ```
 
-Abrir `resumen.txt` en VS Code para leer la conclusión de la colección.
+Abrir `informe.html` en el navegador para ver la colección y su resumen.
+El resumen también se muestra en la terminal; no se genera un archivo TXT separado.
 Abrir o importar `informe.csv` en una planilla para filtrar por `estado` o
 `advertencias`. El CSV usa UTF-8 con BOM, separador punto y coma y punto decimal.
 Si la planilla no reconoce los números, elegir punto como separador decimal al importar.
@@ -165,7 +165,7 @@ compartible, documentación final de resultados y preparación de la defensa.
 
 Cada ejecución genera también informe.html y miniaturas/ dentro de su carpeta
 de outputs. Abrir informe.html con doble clic en el navegador. No requiere un
-servidor, Internet ni dependencias nuevas. CSV y TXT se conservan.
+servidor, Internet ni dependencias nuevas. El CSV se conserva como tabla reutilizable.
 
 La galería muestra indicadores, motivos, tarjetas con miniaturas (hasta 240 px),
 búsqueda por nombre y filtros por estado y advertencia. Las cifras generales
@@ -187,7 +187,7 @@ La muestra y las salidas están ignoradas por Git. Las pruebas automatizadas gen
 sus propias imágenes y no dependen de esa muestra.
 
 Para compartir la galería, copiar toda la carpeta de esa ejecución, incluyendo
-miniaturas, CSV y TXT. Revisar permisos de las imágenes antes de publicarla.
+miniaturas y CSV. Revisar permisos de las imágenes antes de publicarla.
 El módulo src/galeria.py presenta resultados; no cambia las reglas de evaluación.
 
 ## Modo guiado para stickers nuevos

@@ -64,7 +64,7 @@ def texto_resumen(resumen, lado_cm, ppi_minimos, umbral_parcial,
     return "\n".join(lineas) + "\n"
 
 
-def guardar_informes(resultados, errores, texto, directorio):
+def guardar_informes(resultados, errores, directorio):
     destino = Path(directorio) / datetime.now().strftime("analisis_%Y%m%d_%H%M%S_%f")
     destino.mkdir(parents=True, exist_ok=False)
     with (destino / "informe.csv").open("w", encoding="utf-8-sig", newline="") as archivo:
@@ -79,6 +79,5 @@ def guardar_informes(resultados, errores, texto, directorio):
             escritor.writerow(fila)
         for ruta, motivo in errores:
             escritor.writerow({"archivo": ruta.name, "estado": "ERROR_LECTURA", "error": motivo})
-    (destino / "resumen.txt").write_text(texto, encoding="utf-8")
     return destino.resolve()
 
