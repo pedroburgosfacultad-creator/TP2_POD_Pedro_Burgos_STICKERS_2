@@ -68,6 +68,7 @@ que ambos lados midan lo indicado. El programa no distribuye diseños en una pla
 | `--permitir-opacas` | Desactiva el aviso por ausencia de transparencia en etapa final |
 | `--salida` | Directorio de resultados; por defecto outputs en la raíz del proyecto |
 | `--seleccion` | JSON descargado del HTML para preparar la carpeta de PhotoRoom; no se combina con carpeta de análisis |
+| `--analizar-seleccion` | JSON descargado del HTML para volver a analizar los originales seleccionados, sin copiarlos; inicial por defecto; no se combina con carpeta ni `--seleccion` |
 
 ```powershell
 python src/main.py "data/muestra_jpeg_y_png" --etapa inicial --lado-cm 4 --ppi 300
@@ -236,7 +237,7 @@ con muchos píxeles es una limitación del método, no una garantía de calidad.
 La [auditoría final](docs/INFORME_FINAL.md) contrasta el código con los siete pasos
 de la consigna y detalla evidencia, limitaciones, proyección y pendientes de entrega.
 
-El 22/10/2026 se verificaron 47 pruebas y el flujo completo con la muestra local
+El 22/10/2026 se verificaron 52 pruebas y el flujo completo con la muestra local
 mixta, que ahora incluye un PDF: 13 archivos en total. A 4 cm y 300 PPI, la etapa
 inicial produjo 10 candidatos, 2 imágenes para revisar y 1 archivo no procesado.
 El 16,67 % corresponde a las 2 imágenes con advertencias entre las 12 leídas;

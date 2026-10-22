@@ -24,9 +24,11 @@ selección, cantidad y condiciones de uso.
 
 ## Diccionario de informe.csv
 
-Cada fila corresponde a un archivo de la carpeta. El CSV se genera en outputs,
-no dentro de data. Formato: UTF-8 con BOM, separador `;`, punto decimal y hasta
-cuatro decimales. Los vacíos representan datos no disponibles/no aplicables, no ceros.
+Cada fila corresponde a un archivo evaluado: todos los archivos de la carpeta de
+entrada o, al reanalizar una selección JSON, solo los nombres incluidos en ella.
+El CSV se genera en outputs, no dentro de data. Formato: UTF-8 con BOM,
+separador `;`, punto decimal y hasta cuatro decimales. Los vacíos representan
+datos no disponibles/no aplicables, no ceros.
 
 | Campo | Significado |
 |---|---|

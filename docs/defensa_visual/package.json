@@ -1,0 +1,1 @@
+{"name":"tp2-defensa-visual","private":true,"version":"1.0.0","type":"module","scripts":{"build":"node build.mjs","start":"node serve.mjs","snapshot":"python snapshot.py"},"dependencies":{"@remotion/player":"4.0.534","remotion":"4.0.534","react":"19.1.1","react-dom":"19.1.1"},"devDependencies":{"esbuild":"0.25.12"}}
