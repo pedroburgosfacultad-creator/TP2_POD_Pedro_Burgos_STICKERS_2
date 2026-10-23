@@ -1,6 +1,6 @@
 # Pruebas del proyecto
 
-Desde `C:\tps\tp2_explo`, con Pillow instalado:
+Desde `C:\tps\tp2_Burgos`, con Pillow instalado:
 
 ```powershell
 python -m unittest discover -s tests -v
@@ -46,9 +46,9 @@ los argumentos inválidos producen 2 y la cancelación produce 130.
 Las pruebas HTML comprueban contenido y archivos generados; no ejecutan JavaScript
 en un navegador ni garantizan su apariencia. La apertura del navegador está simulada.
 No son pruebas de rendimiento de la colección completa ni de todas las variantes
-posibles de PNG/JPEG. Tampoco certifican calidad visual o requisitos académicos.
+posibles de PNG/JPEG. Tampoco certifican calidad visual. 
 
-## Comprobación manual antes de entregar
+## Comprobación manual
 
 1. Analizar una carpeta pequeña con JPEG, PNG y un PDF; verificar los tres estados
    y que el PDF quede como no procesado. Repetir en etapa final.

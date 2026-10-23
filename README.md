@@ -1,19 +1,23 @@
 # Revisión técnica de imágenes para stickers
 
-Autor: Pedro Burgos. Trabajo Práctico 2 de Programación Orientada a Datos.
+Autor: Pedro Andrés Burgos. TP2 - POD - 1er año LCD
 
 ## Problema y alcance
 
-El microemprendimiento recibe imágenes que deben revisarse antes de preparar stickers.
-El programa responde: **¿Qué archivos presentan advertencias de resolución o
-transparencia al tamaño previsto, y qué problemas aparecen con más frecuencia?**
+El microemprendimiento recibe imágenes que deben revisarse antes de prepararlas como stickers. Se necesita saber cuáles de estas imágenes presentan problemas de resolución o
+transparencia previo a obtener el sticker final. 
 
-Se analizan imágenes locales, se generan mediciones y estadísticas, y se presenta
-una galería para tomar decisiones manuales. No se necesitan registros contables.
-Según la aclaración docente comunicada por el alumno, se permiten imágenes como
-entrada; el CSV es una salida del análisis, no un requisito artificial de entrada.
+Se analizan imágenes locales, se generan mediciones y estadísticas, obtenemos información y en base a esto se presenta una galería para tomar decisiones manuales (imagen apta/no apta para transformar en sticker).
 
-Hay dos etapas:
+El resultado que producirá el programa es información sobre el estado de las imagenes y la posibilidad de una selección y separación de estas dependiendo de la intención del usuario.
+El resultado es utilizado para facilitar el manejo de las imagene hacia la conversión a sticker o hacia la necesidad de ser manipuladas. De esta forma se le da un orden y se ahorra la revisión manual de cada una de las imágenes.
+
+La pregunta que guía el analisis es ¿Qué archivos presentan advertencias de resolución o
+transparencia al tamaño previsto?
+
+
+
+Existen dos etapas:
 
 | Etapa | Archivos admitidos | Base del cálculo | Resultado sin advertencias |
 |---|---|---|---|
