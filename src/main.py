@@ -13,6 +13,10 @@ from informes import guardar_informes, texto_resumen
 
 
 def main():
+    """Lee los argumentos, elige la fuente, analiza, genera CSV y HTML y devuelve el código de salida.
+    Códigos: 0 sin rechazos, 1 con archivos rechazados, 2 por error de entrada, 130 por cancelación.
+    """
+    
     parser = argparse.ArgumentParser(description="Evalúa resolución y transparencia de stickers PNG/JPEG.")
     parser.add_argument("carpeta", nargs="?", type=Path,
                         help="Carpeta de PNG/JPEG; si se omite, inicia el modo guiado")

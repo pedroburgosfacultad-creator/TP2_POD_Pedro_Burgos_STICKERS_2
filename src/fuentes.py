@@ -17,12 +17,15 @@ class FuenteImagenes(ABC):
 
 
 class FuenteCarpeta(FuenteImagenes):
+    """Fuente que lista los archivos del primer nivel de una carpeta."""
     def cargar(self):
         return buscar_archivos(self.ruta)
 
 
 class FuenteSeleccionJSON(FuenteImagenes):
+    """Fuente que lista los archivos elegidos en un JSON descargado del informe HTML."""
     def cargar(self):
+        """Devuelve las rutas de los nombres seleccionados, sin repetir y en su orden."""
         origen, nombres, _ = leer_seleccion(self.ruta)
         return [origen / nombre for nombre in dict.fromkeys(nombres)]
 

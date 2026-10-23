@@ -1,6 +1,6 @@
 # Pruebas del proyecto
 
-Desde `C:\tps\tp2_Burgos`, con Pillow instalado:
+Desde la raíz del proyecto, con Pillow instalado:
 
 ```powershell
 python -m unittest discover -s tests -v

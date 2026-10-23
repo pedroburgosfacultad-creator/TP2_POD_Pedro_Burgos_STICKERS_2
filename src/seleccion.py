@@ -40,6 +40,8 @@ def preparar_photoroom(archivo_seleccion, directorio):
 
 
 def mostrar_preparacion(archivo_seleccion, directorio):
+    """Copia la selección para PhotoRoom, informa en la terminal y devuelve el código de salida."""
+    
     destino, copiados, errores = preparar_photoroom(archivo_seleccion, directorio)
     print(f"Originales copiados: {len(copiados)}")
     for nombre, error in errores:

@@ -13,6 +13,8 @@ else:
 
 
 def pedir_carpeta():
+    """Pregunta hasta recibir la ruta de una carpeta existente (acepta comillas)."""
+
     while True:
         texto = input("Carpeta de imágenes (pegá su ruta): ").strip()
         if len(texto) >= 2 and texto[0] == texto[-1] and texto[0] in ("'", '"'):
@@ -25,6 +27,8 @@ def pedir_carpeta():
 
 
 def pedir_numero(pregunta, predeterminado, porcentaje=False):
+    """Pregunta un número (con coma o punto); repite si no es finito o está fuera de rango."""
+
     while True:
         texto = input(f"{pregunta} [{predeterminado:g}]: ").strip()
         try:
@@ -39,6 +43,7 @@ def pedir_numero(pregunta, predeterminado, porcentaje=False):
 
 
 def pedir_tamano(predeterminado):
+    """Pregunta el lado mayor en cm y repite hasta que esté dentro del rango permitido."""
     while True:
         valor = pedir_numero(f"Lado mayor a imprimir en cm ({LADO_MIN_CM:g} a {LADO_MAX_CM:g})", predeterminado)
         try:
@@ -49,6 +54,7 @@ def pedir_tamano(predeterminado):
 
 
 def pedir_si_no(pregunta, predeterminado=False):
+    """Pregunta sí/no; Enter devuelve el valor predeterminado."""
     while True:
         respuesta = input(f"{pregunta} [{'S/n' if predeterminado else 's/N'}]: ").strip().lower()
         if not respuesta:
@@ -61,10 +67,12 @@ def pedir_si_no(pregunta, predeterminado=False):
 
 
 def pedir_apertura():
+    """Pregunta si se abre el informe HTML en el navegador al terminar."""
     return pedir_si_no("¿Abrir el HTML en tu navegador al terminar?")
 
 
 def pedir_etapa(predeterminada="inicial", permitir_acciones=True):
+    """Muestra el menú y devuelve 'inicial', 'final', 'seleccion' o 'reanalizar'."""
     print("1. Revisión inicial: imágenes recibidas (JPEG y PNG).")
     print("2. Revisión final: archivos preparados (PNG).")
     if permitir_acciones:
@@ -86,6 +94,8 @@ def pedir_etapa(predeterminada="inicial", permitir_acciones=True):
 
 
 def configurar_guiado(lado_cm, ppi, umbral_parcial, exigir_transparencia, etapa="inicial"):
+    """Conduce el menú y devuelve un diccionario con la configuración elegida.Si se elige preparar PhotoRoom, devuelve solo {'seleccion': ruta_del_json}."""
+
     print("\nREVISIÓN DE STICKERS · Modo guiado")
     print("Los originales no se modifican. Podés cancelar con Ctrl+C.")
     etapa = pedir_etapa(etapa)
@@ -117,6 +127,8 @@ def configurar_guiado(lado_cm, ppi, umbral_parcial, exigir_transparencia, etapa=
 
 
 def abrir_informe(ruta):
+    """Pide al navegador abrir el HTML; si no puede, muestra la ruta para abrirlo a mano."""
+
     try:
         abierto = webbrowser.open(Path(ruta).resolve().as_uri())
     except (OSError, webbrowser.Error):
@@ -155,6 +167,7 @@ def buscar_selecciones(carpeta):
 
 
 def pedir_seleccion():
+    """Lista los JSON de selección de Descargas y devuelve el elegido (por número o ruta)."""
     carpeta = carpeta_descargas()
     print(f"Buscando selecciones en: {carpeta}")
     try:

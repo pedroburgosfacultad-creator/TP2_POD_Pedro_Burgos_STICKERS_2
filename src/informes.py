@@ -15,6 +15,8 @@ CAMPOS = [
 
 def texto_resumen(resumen, lado_cm, ppi_minimos, umbral_parcial,
                   exigir_transparencia, carpeta, etapa="final"):
+    """Arma el resumen textual (parámetros, conteos, motivos y límites) para terminal y HTML."""
+
     porcentaje = resumen["revisar_pct_leidos"]
     porcentaje_texto = f"{porcentaje:.2f} %" if porcentaje is not None else "no aplica"
     lineas = [
@@ -65,6 +67,7 @@ def texto_resumen(resumen, lado_cm, ppi_minimos, umbral_parcial,
 
 
 def guardar_informes(resultados, errores, directorio):
+    """Crea una carpeta nueva con informe.csv (resultados y errores) y devuelve su ruta."""
     destino = Path(directorio) / datetime.now().strftime("analisis_%Y%m%d_%H%M%S_%f")
     destino.mkdir(parents=True, exist_ok=False)
     with (destino / "informe.csv").open("w", encoding="utf-8-sig", newline="") as archivo:

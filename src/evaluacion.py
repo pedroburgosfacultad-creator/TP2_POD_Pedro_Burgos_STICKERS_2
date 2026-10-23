@@ -7,11 +7,13 @@ LADO_MAX_CM = 56
 
 
 def validar_lado(lado_cm):
+    """Rechaza lados no finitos o fuera del rango de 0,1 a 56 cm (ambos inclusive)."""
     if not math.isfinite(lado_cm) or not LADO_MIN_CM <= lado_cm <= LADO_MAX_CM:
         raise ValueError(f"El lado mayor debe estar entre {LADO_MIN_CM:g} y {LADO_MAX_CM:g} cm, inclusive.")
 
 
 def validar_parametros(lado_cm, ppi_minimos, umbral_parcial):
+    """Valida lado, referencia PPI (positiva y finita) y umbral parcial (0 a 100). Lanza ValueError con un mensaje comprensible si alguno no es válido."""
     validar_lado(lado_cm)
     if not math.isfinite(ppi_minimos) or ppi_minimos <= 0:
         raise ValueError("La referencia PPI debe ser positiva y finita.")
@@ -21,6 +23,12 @@ def validar_parametros(lado_cm, ppi_minimos, umbral_parcial):
 
 def evaluar_imagen(imagen, lado_cm=4, ppi_minimos=300,
                    umbral_parcial=20, exigir_transparencia=True, etapa="final"):
+    """Evalúa una ImagenSticker y devuelve un diccionario con una fila del informe.
+    En la etapa inicial calcula el PPI sobre la imagen completa; en la final, sobre
+    el rectángulo con alpha > 0, y además revisa opacidad y semitransparencia.
+    Las advertencias se acumulan en 'advertencias' y determinan el 'estado'.
+    Lanza ValueError si los parámetros o la etapa no son válidos.
+    """
     validar_parametros(lado_cm, ppi_minimos, umbral_parcial)
     if etapa not in ("inicial", "final"):
         raise ValueError("La etapa debe ser inicial o final.")
@@ -77,6 +85,7 @@ def evaluar_imagen(imagen, lado_cm=4, ppi_minimos=300,
 
 
 def resumir_resultados(resultados, errores):
+    """Cuenta imágenes leídas, errores, estados y motivos de advertencia."""
     leidos = len(resultados)
     revisar = sum(r["estado"] == "REVISAR" for r in resultados)
     candidatos = sum(r["estado"] == "CANDIDATO" for r in resultados)
